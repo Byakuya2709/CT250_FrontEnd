@@ -5,34 +5,36 @@
         :src="
           user.base64Image
             ? 'data:image/png;base64,' + user.base64Image
-            : 'src/assets/data/img/deafaultAvatar.png'
+            : 'src/assets/data/img/defaultAvatar.png'
         "
         alt="User Avatar"
         class="avatar"
       />
       <h1>{{ user.fullname }}</h1>
-      <p><strong>Address:</strong> {{ user.address }}</p>
-      <p><strong>Birthdate:</strong> {{ formatDate(user.birth) }}</p>
-      <p><strong>Gender:</strong> {{ user.gender }}</p>
-      <p><strong>Detail:</strong> {{ user.detail }}</p>
+      <p><strong>Địa chỉ:</strong> {{ user.address }}</p>
+      <p><strong>Ngày sinh:</strong> {{ formatDate(user.birth) }}</p>
+      <p><strong>Giới tính:</strong> {{ translateGender(user.gender) }}</p>
+      <p><strong>Thông tin chi tiết:</strong> {{ user.detail }}</p>
     </div>
 
     <div class="tasks">
-      <h2>Tasks</h2>
+      <h2>Tác vụ:</h2>
       <div v-if="tasks.length === 0" class="no-tasks">
-        <p>No tasks assigned.</p>
+        <p>Không có tác vụ nào được phân công.</p>
       </div>
-      <div
-        @click="goToTaskDetail(task.id)"
-        v-for="task in tasks"
-        :key="task.id"
-        class="task"
-      >
-        <h5>{{ task.title }}</h5>
-        <p>{{ task.description }}</p>
-        <!-- <p><strong>Nhân viên:</strong> {{ task.userName }}</p> -->
-        <p><strong>Ngày tới hạn:</strong> {{ formatDate(task.date) }}</p>
-        <span class="badge" :class="taskBadges(task)">{{ task.status }}</span>
+      <div v-for="task in tasks" :key="task.id" class="task">
+        <div @click="goToTaskDetail(task.id)">
+          <h5>{{ task.title }}</h5>
+          <p>{{ task.description }}</p>
+          <p><strong>Ngày hoàn thành:</strong> {{ formatDate(task.date) }}</p>
+          <span class="badge" :class="taskBadges(task)">{{ task.status }}</span>
+        </div>
+        <button
+          @click.stop="goToTaskUpdate(task.id)"
+          class="btn btn-secondary update-button"
+        >
+          Cập nhật
+        </button>
       </div>
     </div>
   </div>
@@ -75,14 +77,30 @@ export default {
       }
     },
     goToTaskDetail(taskId) {
-        this.$router.replace({
+      this.$router.replace({
         name: "TaskDetail",
-        params: { taskId: taskId}
+        params: { taskId: taskId },
+      });
+    },
+    goToTaskUpdate(taskId) {
+      this.$router.push({
+        name: "TaskUpdate",
+        params: { taskId: taskId },
       });
     },
     formatDate(dateString) {
       const options = { year: "numeric", month: "long", day: "numeric" };
       return new Date(dateString).toLocaleDateString(undefined, options);
+    },
+    translateGender(gender) {
+      switch (gender) {
+        case "FEMALE":
+          return "Nữ";
+        case "MALE":
+          return "Nam";
+        default:
+          return "Không rõ"; // Trả về "Không rõ" nếu không phải là "FEMALE" hoặc "MALE"
+      }
     },
     taskBadges(task) {
       return {
@@ -127,7 +145,7 @@ export default {
   width: 100px;
   height: 100px;
   border-radius: 50%;
-  border: 2px solid #007bff; /* Thêm đường viền màu xanh */
+  border: 2px solid #007bff; /* Đường viền màu xanh */
   margin-bottom: 15px;
   object-fit: cover; /* Đảm bảo ảnh không bị méo */
 }
@@ -139,9 +157,15 @@ h2 {
 
 .task {
   margin-bottom: 15px;
-  padding: 10px; /* Thêm khoảng cách bên trong */
-  border: 1px solid #dee2e6; /* Thêm đường viền cho từng task */
+  padding: 10px; /* Khoảng cách bên trong */
+  border: 1px solid #dee2e6; /* Đường viền cho từng task */
   border-radius: 4px; /* Làm tròn các góc */
+  transition: background-color 0.2s; /* Hiệu ứng chuyển màu */
+  position: relative; /* Để điều chỉnh vị trí của nút */
+}
+
+.task:hover {
+  background-color: #f1f1f1; /* Màu nền khi hover */
 }
 
 .no-tasks {
@@ -149,5 +173,18 @@ h2 {
   color: #6c757d;
 }
 
+.update-button {
+  margin-top: 10px; /* Khoảng cách trên nút */
+  padding: 8px 15px; /* Padding cho nút */
+  border-radius: 4px; /* Làm tròn các góc */
+  background-color: #007bff; /* Màu nền nút */
+  color: white; /* Màu chữ nút */
+  position: absolute; /* Để nút nằm ở góc phải dưới */
+  bottom: 10px;
+  right: 10px;
+}
 
+.update-button:hover {
+  background-color: #0056b3; /* Màu nền khi hover */
+}
 </style>
