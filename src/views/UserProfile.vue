@@ -15,6 +15,10 @@
       <p><strong>Ngày sinh:</strong> {{ formatDate(user.birth) }}</p>
       <p><strong>Giới tính:</strong> {{ translateGender(user.gender) }}</p>
       <p><strong>Thông tin chi tiết:</strong> {{ user.detail }}</p>
+      <p><strong>Địa chỉ:</strong> {{ user.address }}</p>
+      <p><strong>Ngày sinh:</strong> {{ formatDate(user.birth) }}</p>
+      <p><strong>Giới tính:</strong> {{ translateGender(user.gender) }}</p>
+      <p><strong>Thông tin chi tiết:</strong> {{ user.detail }}</p>
     </div>
 
     <div class="tasks">
