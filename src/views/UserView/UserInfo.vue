@@ -11,14 +11,11 @@
         class="avatar"
       />
       <h1>{{ user.fullname }}</h1>
-      <p><strong>Địa chỉ:</strong> {{ user.address }}</p>
       <p><strong>Ngày sinh:</strong> {{ formatDate(user.birth) }}</p>
       <p><strong>Giới tính:</strong> {{ translateGender(user.gender) }}</p>
-      <p><strong>Thông tin chi tiết:</strong> {{ user.detail }}</p>
       <p><strong>Địa chỉ:</strong> {{ user.address }}</p>
-      <p><strong>Ngày sinh:</strong> {{ formatDate(user.birth) }}</p>
-      <p><strong>Giới tính:</strong> {{ translateGender(user.gender) }}</p>
       <p><strong>Thông tin chi tiết:</strong> {{ user.detail }}</p>
+      <p><strong>Thuộc nhóm:</strong> {{ user.groupName }}</p>
     </div>
 
     <div class="tasks">
@@ -32,20 +29,14 @@
           <p>{{ task.description }}</p>
           <p><strong>Ngày hoàn thành:</strong> {{ formatDate(task.date) }}</p>
           <span class="badge" :class="taskBadges(task)">{{ task.status }}</span>
-        </div>
-        <button
-          @click.stop="goToTaskUpdate(task.id)"
-          class="btn btn-secondary update-button"
-        >
-          Cập nhật
-        </button>
+        </div>  
       </div>
     </div>
   </div>
 </template>
 
 <script>
-import { api } from "../api/Api";
+import { api } from "@/api/Api";
 
 export default {
   data() {
@@ -54,16 +45,27 @@ export default {
       tasks: [],
     };
   },
-  created() {
-    this.fetchUser();
+  computed: {
+    users() {
+      return this.$authStore.user;
+    },
   },
   watch: {
-    "$route.params.userId": "fetchUser",
+    users(newUser) {
+      if (newUser && newUser.id) {
+        this.fetchUser();
+      }
+    },
+  },
+  created() {
+    if (this.users && this.users.id) {
+      this.fetchUser();
+    }
   },
   methods: {
     async fetchUser() {
       try {
-        const userId = this.$route.params.userId;
+        const userId = this.users.id;
         const res = await api.get(`/user/${userId}`);
         this.user = res.data.data;
         await this.fetchTask();
@@ -73,7 +75,7 @@ export default {
     },
     async fetchTask() {
       try {
-        const userId = this.$route.params.userId;
+        const userId = this.users.id;
         const res = await api.get(`/user/${userId}/tasks`);
         this.tasks = res.data.data;
       } catch (error) {
@@ -83,12 +85,6 @@ export default {
     goToTaskDetail(taskId) {
       this.$router.replace({
         name: "TaskInfo",
-        params: { taskId: taskId },
-      });
-    },
-    goToTaskUpdate(taskId) {
-      this.$router.push({
-        name: "TaskUpdate",
         params: { taskId: taskId },
       });
     },

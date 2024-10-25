@@ -1,5 +1,6 @@
-import { createRouter, createWebHistory } from 'vue-router'
-import HomeView from '../views/HomeView.vue'
+import { createRouter, createWebHistory } from 'vue-router';
+import HomeView from '../views/HomeView.vue';
+import { jwtDecode } from 'jwt-decode';
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -35,16 +36,28 @@ const router = createRouter({
       component: () => import('../views/UserView.vue'),
       children: [
         {
+          path: '',
+          name: 'UserInfo',
+          component: () => import('@/views/UserView/UserInfo.vue'),
+          alias: 'profile',
+        },
+        {
           path: 'newtask',
-          name: 'UserNewTask', // Unique name for the route
+          name: 'UserNewTask',
           component: () => import('../views/NewTask.vue')
         },
         {
           path: 'tasks',
-          name: 'UserTasks',  // Unique name for the route
-          component: () => import('../views/Tasks.vue')
-        }
-      ]
+          name: 'UserTasks',
+          component: () => import('../views/UserView/ListTaskInGroup.vue')
+        },
+        {
+          path: 'task/detail/:taskId',
+          name: 'TaskInfo',
+          component: () => import('../views/UserView/TaskInfo.vue')
+        },
+      ],
+      meta: { requiresAuth: true, role: 'ROLE_EMPLOYEE' }
     },
     {
       path: '/admin',
@@ -55,12 +68,11 @@ const router = createRouter({
           path: '',
           name: 'Dashboard',
           component: () => import('@/views/DashBoard.vue'),
-          alias: 'dashboard', // Cung cấp alias cho route này
+          alias: 'dashboard',
         },
         {
           path: 'manage/tasks',
-          name: 'AdminTasks',  // Unique name for the route
-          query: '',
+          name: 'AdminTasks',
           component: () => import('../views/Tasks.vue')
         },
         {
@@ -95,7 +107,7 @@ const router = createRouter({
         },
         {
           path: 'manage/group/:id/add-user',
-          name: 'NewGroup',
+          name: 'AddToGroup',
           component: () => import('../views/AddToGroup.vue')
         },
         {
@@ -103,9 +115,47 @@ const router = createRouter({
           name: 'UserProfile',
           component: () => import('../views/UserProfile.vue')
         }
-      ]
+      ],
+      meta: { requiresAuth: true, role: 'ROLE_ADMIN' }
+    },
+    // Catch-all route for 404 - Page Not Found
+    {
+      path: '/:pathMatch(.*)*',
+      name: 'NotFound',
+      component: () => import('../views/NotFoundView.vue')
     }
   ]
-})
+});
 
-export default router
+// Add navigation guard
+router.beforeEach((to, from, next) => {
+  const token = localStorage.getItem('token');
+  
+  if (to.meta.requiresAuth) {
+    if (token) {
+      try {
+        const decodedToken = jwtDecode(token);
+        const role = decodedToken.role;
+
+        // If the route requires ROLE_ADMIN and the user is not an admin, redirect to home
+        if (to.path.startsWith('/admin') && role !== 'ROLE_ADMIN') {
+          next({ name: 'home' });
+        } else {
+          // Allow access if the role matches the required role or if no specific role is required
+          next();
+        }
+      } catch (error) {
+        // If decoding the token fails, redirect to login
+        next({ name: 'Login' });
+      }
+    } else {
+      // If the user is not authenticated, redirect to login
+      next({ name: 'Login' });
+    }
+  } else {
+    // Allow access to routes that don't require authentication
+    next();
+  }
+});
+
+export default router;

@@ -5,6 +5,7 @@ import { jwtDecode } from 'jwt-decode';
 import { useToast } from "vue-toastification";
 import router from "@/router/index";
 
+
 const toast = useToast();
 
 export const useAuthStore = defineStore('auth', {
@@ -48,7 +49,7 @@ export const useAuthStore = defineStore('auth', {
         this.token = res.data.token;
         const decodedToken = jwtDecode(this.token);
         this.role = decodedToken.role;
-
+        console.log(this.role)
         const avatar = res.data.avatar ? `data:image/png;base64,${res.data.avatar}` : null;
         localStorage.setItem('avatar', avatar);
 
