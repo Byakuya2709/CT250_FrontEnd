@@ -42,6 +42,11 @@ const router = createRouter({
           alias: 'profile',
         },
         {
+          path: 'all-request',
+          name: 'ListRequestUpdateTask',
+          component: () => import('../views/UserView/ListRequestUpdateTask.vue')
+        },
+        {
           path: 'newtask',
           name: 'UserNewTask',
           component: () => import('../views/NewTask.vue')
@@ -56,6 +61,11 @@ const router = createRouter({
           name: 'TaskInfo',
           component: () => import('../views/UserView/TaskInfo.vue')
         },
+        {
+          path: "/task/:id/update",
+          name: "UpdateTaskByUser",
+          component: () => import("@/views/UserView/UpdateTask.vue"),
+        }
       ],
       meta: { requiresAuth: true, role: 'ROLE_EMPLOYEE' }
     },

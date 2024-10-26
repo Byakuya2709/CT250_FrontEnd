@@ -3,7 +3,7 @@
       <div class="card-body">
         <div class="button-group">
           <button class="btn btn-warning mx-2" @click="updateTask">
-            Cập nhật
+           Gửi yêu cầu Cập nhật
           </button>
         </div>
         <h5 class="card-title task-title">{{ task.title }}</h5>
@@ -17,7 +17,7 @@
               {{ formatDate(task.createdDate) }}
             </div>
             <div class="col-6 text-right">
-              <strong>Ngày hoàn thành:</strong> {{ formatDate(task.date) }}
+              <strong>Ngày tới hạn:</strong> {{ formatDate(task.date) }}
             </div>
             <div class="col-6 text-right">
               <strong>Lần cuối cập nhật:</strong>
@@ -147,7 +147,7 @@
         }
       },
       async updateTask() {
-        this.$router.push({ name: "EditTask", params: { id: this.task.id } });
+        this.$router.push({ name: "UpdateTaskByUser", params: { id: this.task.id } });
       },
       formatDate(date) {
         return new Date(date).toLocaleDateString();

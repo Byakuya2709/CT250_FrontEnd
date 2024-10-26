@@ -26,7 +26,7 @@
       <div v-for="task in tasks" :key="task.id" class="task">
         <div @click="goToTaskDetail(task.id)">
           <h5>{{ task.title }}</h5>
-          <p>{{ task.description }}</p>
+          <p><strong>Mô tả: </strong>{{ task.description }}</p>
           <p><strong>Ngày hoàn thành:</strong> {{ formatDate(task.date) }}</p>
           <span class="badge" :class="taskBadges(task)">{{ task.status }}</span>
         </div>  
