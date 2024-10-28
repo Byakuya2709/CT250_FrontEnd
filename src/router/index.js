@@ -124,7 +124,17 @@ const router = createRouter({
           path: 'manage/employee/:userId',
           name: 'UserProfile',
           component: () => import('../views/UserProfile.vue')
-        }
+        },
+        {
+          path: 'manage/update-request',
+          name: 'ManageUpdatedTask',
+          component: () => import('../views/ManageUpdatedTask.vue')
+        },
+        {
+          path: 'create/account',
+          name: 'CreateAccount',
+          component: () => import('../views/RegisterView.vue')
+        },
       ],
       meta: { requiresAuth: true, role: 'ROLE_ADMIN' }
     },
@@ -140,7 +150,7 @@ const router = createRouter({
 // Add navigation guard
 router.beforeEach((to, from, next) => {
   const token = localStorage.getItem('token');
-  
+
   if (to.meta.requiresAuth) {
     if (token) {
       try {

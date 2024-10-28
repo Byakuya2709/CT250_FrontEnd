@@ -83,8 +83,18 @@
                </li> -->
               <li class="menu-item">
                 <div class="dropdown">
-                  <router-link class="menu-link link-active" to="/about"
-                    >Thông tin</router-link
+                  <router-link
+                    v-if="isAuthenticated && !isAdmin"
+                    class="menu-link link-active"
+                    to="/about"
+                    >Trang người dùng</router-link
+                  >
+                </div>
+              </li>
+              <li v-if="isAdmin" class="menu-item">
+                <div class="dropdown">
+                  <router-link class="menu-link link-active" to="/admin"
+                    >ADMIN DASHBOARD</router-link
                   >
                 </div>
               </li>
@@ -107,13 +117,6 @@
                 <div class="dropdown">
                   <a class="menu-link link-active" @click.prevent="logout"
                     >Đăng xuất</a
-                  >
-                </div>
-              </li>
-              <li v-if="isAdmin" class="menu-item">
-                <div class="dropdown">
-                  <router-link class="menu-link link-active" to="/admin"
-                    >ADMIN DASHBOARD</router-link
                   >
                 </div>
               </li>

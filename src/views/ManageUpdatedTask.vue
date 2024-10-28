@@ -55,9 +55,7 @@ export default {
     async fetchTaskUpdates() {
       this.loading = true;
       try {
-        const response = await api.get(
-          `/user/task/update-request/${this.userId}/all`
-        );
+        const response = await api.get(`/admin/task/update-request/all`);
         this.updates = response.data.data;
       } catch (error) {
         this.$toast.error(error.response?.data?.message || error.message);

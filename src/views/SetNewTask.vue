@@ -62,7 +62,7 @@
             value="group"
             v-model="assignmentType"
           />
-          <label for="assignGroup">Nhóm</label>
+          <label for="assignGroup">Nhóm </label>
         </div>
       </div>
 
@@ -86,6 +86,9 @@
 
       <div v-if="assignmentType === 'group'" class="mb-3">
         <label for="groupId" class="form-label">Nhóm:</label>
+        <div class="info-warning">
+          Tác vụ sẽ được phân công cho nhóm trưởng của nhóm.
+        </div>
         <select
           class="form-select"
           id="groupId"
@@ -97,6 +100,7 @@
             {{ group.name }}
           </option>
         </select>
+
         <div v-if="!validate.group && !groupId" class="invalid-feedback">
           Nhóm thực hiện tác vụ không được bỏ trống.
         </div>
@@ -273,3 +277,11 @@ export default {
   },
 };
 </script>
+<style scoped>
+.info-warning {
+  width: 100%;
+  margin-top: 0.25rem;
+  font-size: 0.875em;
+  color: var(--bs-form-invalid-color);
+}
+</style>
