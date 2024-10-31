@@ -18,7 +18,6 @@
           <div class="form-group">
             <label for="status">Trạng thái mới</label>
             <select v-model="status" class="form-control" id="status" required>
-              <option value="PENDING">Chờ xử lý</option>
               <option value="IN_PROGRESS">Đang xử lý</option>
               <option value="COMPLETED">Hoàn thành</option>
               <option value="CANCELED">Hủy bỏ</option>

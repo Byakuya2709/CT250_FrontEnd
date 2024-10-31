@@ -86,7 +86,7 @@
                   <router-link
                     v-if="isAuthenticated && !isAdmin"
                     class="menu-link link-active"
-                    to="/about"
+                    to="/user"
                     >Trang người dùng</router-link
                   >
                 </div>

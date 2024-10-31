@@ -136,14 +136,24 @@ export default {
         };
         const authStore = useAuthStore();
 
-        const res = await authStore.login(user);
-        if (res.status === 200) {
-          this.$toast.success(res.data.message);
-          setTimeout(() => {
-            this.$router.push("/admin").then(() => window.location.reload());
-          }, 2000);
+        const { response, role } = await authStore.login(user);
+
+        // Kiểm tra trạng thái phản hồi
+        if (response.status === 200) {
+          this.$toast.success(response.data.message);
+
+          // Chuyển hướng dựa trên vai trò
+          if (role === "ROLE_ADMIN") {
+            setTimeout(() => {
+              this.$router.push("/admin").then(() => window.location.reload());
+            }, 2000);
+          } else {
+            setTimeout(() => {
+              this.$router.push("/user").then(() => window.location.reload());
+            }, 2000);
+          }
         } else {
-          this.$toast.warning(res.data.message);
+          this.$toast.warning(response.data.message);
         }
       } catch (error) {
         this.$toast.error(error.response?.data?.message || "Đã xảy ra lỗi");

@@ -4,7 +4,7 @@
     <div v-if="loading">Đang tải dữ liệu...</div>
     <table v-else class="table table-bordered">
       <thead>
-        <tr>
+        <tr class="table-dark">
           <th>Tác vụ</th>
           <th>Trạng thái tác vụ</th>
           <th>Ngày Yêu Cầu Cập Nhật</th>
@@ -119,8 +119,9 @@ export default {
 }
 
 .table th {
-  color: #333;
+  color: #f1e7e7;
   font-weight: bold;
+  text-align: center;
 }
 
 .table tr:nth-child(even) {

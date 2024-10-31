@@ -4,7 +4,7 @@
     <div v-if="loading">Đang tải dữ liệu...</div>
     <table v-else class="table table-bordered">
       <thead>
-        <tr>
+        <tr class="table-dark" style="color: aliceblue">
           <th>Tác vụ</th>
           <th>Trạng thái tác vụ</th>
           <th>Ngày Yêu Cầu Cập Nhật</th>
@@ -12,6 +12,8 @@
           <th>Mô Tả Cập Nhật</th>
           <th>Trạng Thái Xét Duyệt</th>
           <th>Nhận Xét Quản trị viên</th>
+          <th>Phê Duyệt</th>
+          <th>Từ Chối</th>
         </tr>
       </thead>
       <tbody>
@@ -26,7 +28,43 @@
           </td>
           <td>{{ item.description || "Không có mô tả" }}</td>
           <td>{{ translateStatus(item.status) }}</td>
-          <td>{{ item.adminComment || "Chưa có nhận xét" }}</td>
+          <td>
+            <template
+              v-if="item.status === 'APPROVED' || item.status === 'REJECTED'"
+            >
+              <p>{{ item.adminComment || "Không có nhận xét" }}</p>
+            </template>
+            <template v-else>
+              <input
+                v-model="item.adminComment"
+                type="text"
+                class="form-control"
+                placeholder="Nhập nhận xét"
+              />
+            </template>
+          </td>
+          <td>
+            <button
+              @click="approveRequest(item)"
+              class="btn btn-success btn-sm"
+              :disabled="
+                item.status === 'APPROVED' || item.status === 'REJECTED'
+              "
+            >
+              Phê Duyệt
+            </button>
+          </td>
+          <td>
+            <button
+              @click="rejectRequest(item)"
+              class="btn btn-danger btn-sm"
+              :disabled="
+                item.status === 'APPROVED' || item.status === 'REJECTED'
+              "
+            >
+              Từ Chối
+            </button>
+          </td>
         </tr>
       </tbody>
     </table>
@@ -46,23 +84,22 @@ export default {
   created() {
     this.fetchTaskUpdates();
   },
-  computed: {
-    userId() {
-      return this.$authStore.userId;
-    },
-  },
   methods: {
     async fetchTaskUpdates() {
       this.loading = true;
       try {
         const response = await api.get(`/admin/task/update-request/all`);
-        this.updates = response.data.data;
+        this.updates = response.data.data.map((item) => ({
+          ...item,
+          adminComment: item.adminComment || "", // Ensure adminComment is always a string
+        }));
       } catch (error) {
         this.$toast.error(error.response?.data?.message || error.message);
       } finally {
         this.loading = false;
       }
     },
+
     formatDate(dateString) {
       const options = {
         year: "numeric",
@@ -77,7 +114,7 @@ export default {
     },
     toTaskInfo(id) {
       this.$router.replace({
-        name: "TaskInfo",
+        name: "TaskDetail",
         params: { taskId: id },
       });
     },
@@ -96,6 +133,69 @@ export default {
       if (item.status === "APPROVED") return "table-success"; // Tô màu cho dòng đã chấp thuận
       if (item.status === "REJECTED") return "table-danger"; // Tô màu cho dòng đã từ chối
       return ""; // Không tô màu cho các trạng thái khác
+    },
+    async approveRequest(item) {
+      if (confirm("Bạn có chắc chắn muốn phê duyệt yêu cầu này?")) {
+        const req = {
+          requestId: item.id,
+          taskId: item.task.id,
+          requestStatus: item.requestedStatus,
+          status: "APPROVED",
+          adminComment: item.adminComment,
+        };
+        try {
+          const response = await api.put(
+            "/admin/task/update-request/approve",
+            req
+          );
+          // Gọi postComment nếu adminComment không rỗng
+          if (item.adminComment.trim() !== "") {
+            await this.postComment(item);
+          }
+          this.$toast.success(response.data.message);
+          await this.fetchTaskUpdates(); // Refresh the list after approval
+        } catch (error) {
+          this.$toast.error(error.response?.data?.message || error.message);
+        }
+      }
+    },
+    async rejectRequest(item) {
+      if (confirm("Bạn có chắc chắn muốn từ chối yêu cầu này?")) {
+        const req = {
+          requestId: item.id,
+          taskId: item.task.id,
+          requestStatus: item.requestedStatus,
+          status: "REJECTED",
+          adminComment: item.adminComment,
+        };
+        try {
+          const response = await api.put(
+            "/admin/task/update-request/reject",
+            req
+          );
+          this.$toast.success(response.data.message);
+          await this.fetchTaskUpdates(); // Refresh the list after rejection
+          // Gọi postComment nếu adminComment không rỗng
+          if (item.adminComment.trim() !== "") {
+            await this.postComment(item);
+          }
+        } catch (error) {
+          this.$toast.error(error.response?.data?.message || error.message);
+        }
+      }
+    },
+    async postComment(item) {
+      try {
+        const res = await api.post(`/comment/task/${item.task.id}`, {
+          content: item.adminComment,
+          userId: this.userId,
+        });
+      } catch (error) {}
+    },
+  },
+  computed: {
+    userId() {
+      return this.$authStore.userId;
     },
   },
 };
@@ -117,8 +217,10 @@ export default {
 }
 
 .table th {
-  color: #333;
+  color: #f5f0f0;
   font-weight: bold;
+  text-align: center;
+  align-items: center;
 }
 
 .table tr:nth-child(even) {

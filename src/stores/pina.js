@@ -49,7 +49,6 @@ export const useAuthStore = defineStore('auth', {
         this.token = res.data.token;
         const decodedToken = jwtDecode(this.token);
         this.role = decodedToken.role;
-        console.log(this.role)
         const avatar = res.data.avatar ? `data:image/png;base64,${res.data.avatar}` : null;
         localStorage.setItem('avatar', avatar);
 
@@ -69,7 +68,7 @@ export const useAuthStore = defineStore('auth', {
         setAuthorization(this.token);
 
         this.error = null; // Reset error
-        return response;
+        return { response, role: this.role };
       } catch (err) {
         console.log(err);
         localStorage.removeItem('token'); // Xóa token khi lỗi
@@ -99,9 +98,7 @@ export const useAuthStore = defineStore('auth', {
         removeAuthorization();
         toast.info("Đang chuyển sang trang đăng nhập")
         setTimeout(() => {
-          router.replace('/login').then(() => {
-            window.location.reload(); // Reload after navigating to the login page
-          });
+          router.replace('/login')
         }, 2000);
       } catch (err) {
         toast.error(err.response.data.message);

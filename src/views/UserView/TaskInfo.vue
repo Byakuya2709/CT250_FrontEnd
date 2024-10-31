@@ -3,7 +3,7 @@
     <div class="card-body">
       <div class="button-group">
         <button
-          :disabled="task.status === 'COMPLETED'"
+          :disabled="task.status === 'COMPLETED' || this.userId != task.userId "
           class="btn btn-warning mx-2"
           @click="updateTask"
         >
@@ -21,13 +21,12 @@
             {{ formatDate(task.createdDate) }}
           </div>
           <div class="col-6 text-right">
-            <strong>Ngày tới hạn:</strong> {{ formatDate(task.date) }}
+            <strong>Ngày hoàn thành:</strong> {{ formatDate(task.date) }}
           </div>
           <div class="col-6 text-right">
             <strong>Lần cuối cập nhật:</strong>
             {{ formatDate(task.updatedDate) }}
           </div>
-
           <div class="col-6 text-left">
             <strong>Chịu trách nhiệm:</strong> {{ task.userName }}
           </div>
@@ -63,13 +62,51 @@
           v-else
           v-for="comment in comments"
           :key="comment.id"
-          class="comment"
+          class="comment d-flex align-items-center"
         >
-          <p>
-            <strong>{{ comment.userName }}:</strong> {{ comment.content }}
-          </p>
-          <p class="text-muted">{{ formatDateTime(comment.date) }}</p>
-          <hr />
+          <div v-if="editingCommentId === comment.id">
+            <!-- Edit Comment Input -->
+            <textarea
+              v-model="editCommentContent"
+              class="form-control mb-2"
+              placeholder="Sửa bình luận..."
+            ></textarea>
+
+            <button
+              class="btn btn-success btn-sm mr-2"
+              @click="saveCommentEdit(comment.id)"
+            >
+              Lưu
+            </button>
+            <button class="btn btn-secondary btn-sm" @click="cancelCommentEdit">
+              Hủy
+            </button>
+          </div>
+          <div v-else>
+            <p>
+              <strong>{{ comment.userName }}:</strong> {{ comment.content }}
+            </p>
+            <p class="text-muted">{{ formatDateTime(comment.date) }}</p>
+          </div>
+          <div>
+           
+            <button
+              v-if="
+                comment.userId === userId && editingCommentId !== comment.id
+              "
+              class="btn btn-info btn-sm ml-2"
+              @click="enableCommentEdit(comment)"
+            >
+              Sửa
+            </button>
+            <button
+              v-if="comment.userId === userId || this.role == 'ROLE_ADMIN'"
+              class="btn btn-danger btn-sm ml-auto"
+              @click="deleteComment(comment.id)"
+            >
+              Xóa
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -86,6 +123,8 @@ export default {
       task: {},
       comments: [],
       newComment: "",
+      editingCommentId: null,
+      editCommentContent: "",
     };
   },
   created() {
@@ -132,7 +171,6 @@ export default {
             userId: this.userId,
           }
         );
-        console.log(res);
         const newComment = res.data.data;
         this.comments.push({
           id: newComment.id,
@@ -143,8 +181,41 @@ export default {
           taskId: newComment.taskId,
         });
         this.newComment = "";
-
         this.$toast.success(res.data.message);
+      } catch (error) {
+        const message = error.response?.data?.message || error;
+        this.$toast.error(message);
+      }
+    },
+    async deleteComment(commentId) {
+      try {
+        await api.delete(`/comment/task/${commentId}`);
+        this.comments = this.comments.filter(
+          (comment) => comment.id !== commentId
+        );
+        this.$toast.success("Bình luận đã được xóa thành công.");
+      } catch (error) {
+        const message = error.response?.data?.message || error;
+        this.$toast.error(message);
+      }
+    },
+    enableCommentEdit(comment) {
+      this.editingCommentId = comment.id;
+      this.editCommentContent = comment.content;
+    },
+    async saveCommentEdit(commentId) {
+      try {
+        console.log(this.editCommentContent);
+        await api.put(`/comment/task/${commentId}`, {
+          content: this.editCommentContent,
+        });
+        const comment = this.comments.find((c) => c.id === commentId);
+        if (comment) {
+          comment.content = this.editCommentContent;
+        }
+        this.editingCommentId = null;
+        this.editCommentContent = "";
+        this.$toast.success("Bình luận đã được cập nhật.");
       } catch (error) {
         const message = error.response?.data?.message || error;
         this.$toast.error(message);
@@ -155,6 +226,10 @@ export default {
         name: "UpdateTaskByUser",
         params: { id: this.task.id },
       });
+    },
+    cancelCommentEdit() {
+      this.editingCommentId = null;
+      this.editCommentContent = "";
     },
     formatDate(date) {
       return new Date(date).toLocaleDateString();
@@ -182,6 +257,9 @@ export default {
     userId() {
       return this.$authStore.userId;
     },
+    role() {
+      return this.$authStore.role;
+    },  
   },
 };
 </script>
@@ -219,5 +297,50 @@ export default {
 .badge {
   padding: 0.5em 1em; /* Add padding for badge */
   font-size: 1.1rem; /* Slightly larger font for badge */
+}
+.comment {
+  padding: 10px 0;
+  border-bottom: 1px solid #ddd;
+  justify-content: space-between;
+}
+
+.comment:last-child {
+  border-bottom: none;
+}
+
+.comment p {
+  margin: 0;
+}
+
+.comments-section .btn {
+  margin-left: auto; /* Ensures the delete button stays at the far right */
+}
+.comments-section .btn {
+  font-size: 1rem;
+  padding: 5px 10px; /* Adjust padding for smaller buttons */
+  border-radius: 5px; /* Rounded corners */
+  margin-left: 10px; /* Spacing between buttons */
+}
+
+.comments-section .btn-danger {
+  background-color: #e74c3c; /* Red color for delete button */
+  color: #fff;
+  border: none;
+  transition: background-color 0.3s;
+}
+
+.comments-section .btn-danger:hover {
+  background-color: #c0392b; /* Darker red on hover */
+}
+
+.comments-section .btn-info {
+  background-color: #3498db; /* Blue color for edit button */
+  color: #fff;
+  border: none;
+  transition: background-color 0.3s;
+}
+
+.comments-section .btn-info:hover {
+  background-color: #2980b9; /* Darker blue on hover */
 }
 </style>
