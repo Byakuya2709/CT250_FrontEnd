@@ -42,6 +42,12 @@ const router = createRouter({
           alias: 'profile',
         },
         {
+          path: 'updateprofile',
+          name: 'ChangeUserInfo',
+          component: () => import('@/views/ChangeProfile.vue'),
+        },
+
+        {
           path: 'all-request',
           name: 'ListRequestUpdateTask',
           component: () => import('../views/UserView/ListRequestUpdateTask.vue')
@@ -149,9 +155,20 @@ const router = createRouter({
 
 // Add navigation guard
 router.beforeEach((to, from, next) => {
-  const token = localStorage.getItem('token');
-
-  if (to.meta.requiresAuth) {
+  if (to.name === 'Login') {
+    const hasReloaded = localStorage.getItem('loginPageReloaded');
+    if (!hasReloaded) {
+      // Set the flag before navigating to login and reload after a short delay
+      localStorage.setItem('loginPageReloaded', 'true');
+      next(); // Allow navigation to the login route
+      setTimeout(() => {
+        window.location.reload();
+      }, 10); // Small delay to ensure navigation completes
+    } else {
+      next(); // Continue without reloading if already reloaded once
+    }
+  } else if (to.meta.requiresAuth) {
+    const token = localStorage.getItem('token');
     if (token) {
       try {
         const decodedToken = jwtDecode(token);
@@ -175,6 +192,11 @@ router.beforeEach((to, from, next) => {
   } else {
     // Allow access to routes that don't require authentication
     next();
+  }
+});
+router.afterEach((to) => {
+  if (to.name !== 'Login') {
+    localStorage.removeItem('loginPageReloaded');
   }
 });
 

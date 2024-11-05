@@ -30,7 +30,7 @@
     </div>
 
     <div class="mb-3">
-      <label for="userId" class="form-label">Nhân viên:</label>
+      <label for="userId" class="form-label">Nhóm trưởng:</label>
       <select
         class="form-select"
         id="userId"
@@ -44,7 +44,7 @@
         </option>
       </select>
       <div v-if="!validate.user" class="invalid-feedback">
-        Nhân viên thực hiện tác vụ không được bỏ trống.
+        Nhóm trưởng không được bỏ trống.
       </div>
     </div>
 

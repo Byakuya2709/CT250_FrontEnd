@@ -34,7 +34,7 @@
       </div>
     </div>
 
-    <div class="container col-10" style="margin-left: 10px;">
+    <div class="container col-10" style="margin-left: 10px">
       <RouterView />
     </div>
   </div>
@@ -58,7 +58,8 @@ export default {
         {
           name: "Trang Cá Nhân",
           path: "/user/profile",
-          iconPath: "M8 3.5a.5.5 0 0 1 .5.5v4h3.5a.5.5 0 0 1 0 1H8a.5.5 0 0 1-.5-.5V4a.5.5 0 0 1 .5-.5z M8 1a7 7 0 1 1 0 14A7 7 0 0 1 8 1zM1 8a7 7 0 1 0 14 0A7 7 0 0 0 1 8z",
+          iconPath:
+            "M8 3.5a.5.5 0 0 1 .5.5v4h3.5a.5.5 0 0 1 0 1H8a.5.5 0 0 1-.5-.5V4a.5.5 0 0 1 .5-.5z M8 1a7 7 0 1 1 0 14A7 7 0 0 1 8 1zM1 8a7 7 0 1 0 14 0A7 7 0 0 0 1 8z",
         },
         {
           name: "Quản Lý Tác Vụ",
@@ -71,10 +72,16 @@ export default {
           path: "/user/all-request",
           iconPath:
             "M2 3.5V2a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v1.5h1a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H1a1 1 0 0 1-1-1v-10a1 1 0 0 1 1-1h1zm11-1V2a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1v.5H2v10h12v-10h-1z M9 8H7v4h2V8zm1-3H6v2h4V5z",
-        },         
+        },
         {
           name: "Tạo Tác Vụ",
           path: "/user/newtask",
+          iconPath:
+            "M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3a.5.5 0 0 1 .5-.5z M8 15A7 7 0 1 0 8 1a7 7 0 0 0 0 14zM1 8a7 7 0 1 1 14 0A7 7 0 0 1 1 8z",
+        },
+        {
+          name: "Thay đổi thông tin cá nhân",
+          path: "/user/updateprofile",
           iconPath:
             "M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3a.5.5 0 0 1 .5-.5z M8 15A7 7 0 1 0 8 1a7 7 0 0 0 0 14zM1 8a7 7 0 1 1 14 0A7 7 0 0 1 1 8z",
         },
