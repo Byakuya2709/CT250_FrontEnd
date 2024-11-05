@@ -241,7 +241,28 @@ export default {
       this.validatePasswordConfirm(value);
     },
     birth(value) {
-      this.validateBirth(value);
+      const selectedDate = new Date(value);
+      const today = new Date();
+
+      // Calculate age in years
+      const age = today.getFullYear() - selectedDate.getFullYear();
+      const monthDiff = today.getMonth() - selectedDate.getMonth();
+      const dayDiff = today.getDate() - selectedDate.getDate();
+
+      // Check if the user is at least 18 years old
+      const isAtLeast18 =
+        age > 18 ||
+        (age === 18 && (monthDiff > 0 || (monthDiff === 0 && dayDiff >= 0)));
+
+      // Check if the selected date is not in the future
+      const isNotFutureDate = selectedDate <= today;
+
+      this.validated.birth = isAtLeast18 && isNotFutureDate;
+      if (!isAtLeast18) {
+        this.$toast.error("Bạn phải đủ 18 tuổi.");
+      } else if (!isNotFutureDate) {
+        this.$toast.error("Ngày sinh không được vượt quá ngày hiện tại.");
+      }
     },
     address(value) {
       this.validateAddress(value);

@@ -42,6 +42,12 @@ const router = createRouter({
           alias: 'profile',
         },
         {
+          path: 'updateprofile',
+          name: 'ChangeUserInfo',
+          component: () => import('@/views/ChangeProfile.vue'),
+        },
+
+        {
           path: 'all-request',
           name: 'ListRequestUpdateTask',
           component: () => import('../views/UserView/ListRequestUpdateTask.vue')

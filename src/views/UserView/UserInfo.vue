@@ -11,6 +11,7 @@
         class="avatar"
       />
       <h1>{{ user.fullname }}</h1>
+      <p><strong>Email:</strong> {{ user.email }}</p>
       <p><strong>Ngày sinh:</strong> {{ formatDate(user.birth) }}</p>
       <p><strong>Giới tính:</strong> {{ translateGender(user.gender) }}</p>
       <p><strong>Địa chỉ:</strong> {{ user.address }}</p>
@@ -29,7 +30,7 @@
           <p><strong>Mô tả: </strong>{{ task.description }}</p>
           <p><strong>Ngày hoàn thành:</strong> {{ formatDate(task.date) }}</p>
           <span class="badge" :class="taskBadges(task)">{{ task.status }}</span>
-        </div>  
+        </div>
       </div>
     </div>
   </div>
