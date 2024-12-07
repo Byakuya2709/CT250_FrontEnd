@@ -107,7 +107,7 @@ export default {
       if (typeof grecaptcha !== "undefined") {
         grecaptcha.ready(() => {
           grecaptcha
-            .execute("6LeN92gqAAAAAOrMZ62v0Cs1T1WBSm6hKFKMS8y9", {
+            .execute("6LeM92gqAAAAAPjBmkM_YoXkkfv8p0jLZikZ1Odl", {
               action: "login",
             })
             .then((token) => {
