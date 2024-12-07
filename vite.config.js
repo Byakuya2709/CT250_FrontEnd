@@ -8,6 +8,7 @@ export default defineConfig({
   plugins: [
     vue(),
   ],
+  base: '/B2110127_TaskManagement_FrontEnd/',
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url))
