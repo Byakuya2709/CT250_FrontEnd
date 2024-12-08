@@ -155,19 +155,20 @@ const router = createRouter({
 
 // Add navigation guard
 router.beforeEach((to, from, next) => {
-  if (to.name === 'Login') {
-    const hasReloaded = localStorage.getItem('loginPageReloaded');
-    if (!hasReloaded) {
-      // Set the flag before navigating to login and reload after a short delay
-      localStorage.setItem('loginPageReloaded', 'true');
-      next(); // Allow navigation to the login route
-      setTimeout(() => {
-        window.location.reload();
-      }, 10); // Small delay to ensure navigation completes
-    } else {
-      next(); // Continue without reloading if already reloaded once
-    }
-  } else if (to.meta.requiresAuth) {
+  // if (to.name === 'Login') {
+  //   const hasReloaded = localStorage.getItem('loginPageReloaded');
+  //   if (!hasReloaded) {
+  //     // Set the flag before navigating to login and reload after a short delay
+  //     localStorage.setItem('loginPageReloaded', 'true');
+  //     next(); // Allow navigation to the login route
+  //     setTimeout(() => {
+  //       window.location.reload();
+  //     }, 10); // Small delay to ensure navigation completes
+  //   } else {
+  //     next(); // Continue without reloading if already reloaded once
+  //   }
+  // } else 
+  if (to.meta.requiresAuth) {
     const token = localStorage.getItem('token');
     if (token) {
       try {
@@ -194,10 +195,10 @@ router.beforeEach((to, from, next) => {
     next();
   }
 });
-router.afterEach((to) => {
-  if (to.name !== 'Login') {
-    localStorage.removeItem('loginPageReloaded');
-  }
-});
+// router.afterEach((to) => {
+//   if (to.name !== 'Login') {
+//     localStorage.removeItem('loginPageReloaded');
+//   }
+// });
 
 export default router;
