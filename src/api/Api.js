@@ -10,7 +10,7 @@ const commonConfig = {
 };
 
 export const api = axios.create({
-    baseURL: 'http://localhost:8080/',
+    baseURL: 'http://localhost:8081/',
     ...commonConfig
 });
 

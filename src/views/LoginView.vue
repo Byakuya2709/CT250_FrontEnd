@@ -1,82 +1,47 @@
 <template>
-  <div class="login bg-light">
-    <div class="d-flex justify-content-center align-items-center vh-100">
-      <div class="d-flex max-w-4xl mt-5">
-        <div class="bg-white p-4 border border-dark">
-          <h1 class="text-dark text-center mb-4">Đăng Nhập</h1>
-          <form @submit.prevent="onCaptchaClick">
-            <div class="mb-3">
-              <label for="email" class="form-label">Email</label>
-              <input
-                type="email"
-                placeholder="Email"
-                v-model="email"
-                class="form-control"
-              />
-              <p v-if="!validated.email" class="text-danger mt-1">
-                Vui lòng nhập email hợp lệ.
-              </p>
-            </div>
-            <div class="mb-3">
-              <label for="password" class="form-label">Mật Khẩu</label>
-              <input
-                autocomplete="off"
-                required
-                type="password"
-                placeholder="Password"
-                v-model="password"
-                class="form-control"
-              />
-              <p v-if="!validated.password" class="text-danger mt-1">
-                Mật khẩu phải gồm ít nhất chữ thường, số và không được dưới 8 kí
-                tự.
-              </p>
-            </div>
-            <div class="mb-3">
-              <input
-                type="checkbox"
-                v-model="isCaptchaChecked"
-                id="captchaCheck"
-              />
-              <label for="captchaCheck" class="form-check-label">
-                Tôi đã xác minh CAPTCHA
-              </label>
-            </div>
-
-            <div class="mb-3 d-flex justify-content-center align-items-center">
-              <input
-                type="submit"
-                value="Login"
-                class="btn btn-primary w-50"
-                :disabled="!isValidated || !isCaptchaChecked"
-              />
-            </div>
-            <div class="text-center mt-3">
-              <router-link to="/forgot-password" class="text-secondary">
-                Quên mật khẩu?
-              </router-link>
-            </div>
-          </form>
-          <p v-if="captchaError" class="text-danger mt-1">
-            Vui lòng xác minh CAPTCHA.
+  <div class="login-container">
+    <div class="login-box">
+      <h2>Đăng Nhập</h2>
+      <form @submit.prevent="handleLogin">
+        <div class="form-group">
+          <label for="email">Email</label>
+          <input
+            type="email"
+            id="email"
+            v-model="email"
+            placeholder="Nhập email"
+            required
+            autofocus
+          />
+          <p v-if="email && !isEmailValid" class="error-message">
+            Email không hợp lệ.
           </p>
         </div>
-        <div class="form-img">
-          <router-link to="/">
-            <img src="/src/assets/data/img/sign/logo.png" alt="" />
-          </router-link>
-          <router-link title="Sign-up" to="/signup" class="sign-link mt-3">
-            Đăng Ký
-          </router-link>
+
+        <div class="form-group">
+          <label for="password">Mật khẩu</label>
+          <input
+            type="password"
+            id="password"
+            v-model="password"
+            placeholder="Nhập mật khẩu"
+            required
+          />
+          <p v-if="password && password.length < 6" class="error-message">
+            Mật khẩu phải ít nhất 6 ký tự.
+          </p>
         </div>
-      </div>
+
+        <button type="submit" :disabled="!isFormValid">Đăng Nhập</button>
+      </form>
     </div>
   </div>
 </template>
+
 <script>
-import { api } from "../api/Api";
 import { useAuthStore } from "../stores/pina";
-import config from "@/composable/config";
+import { computed, ref } from "vue";
+import { useRouter } from "vue-router";
 
 export default {
   name: "Login",
@@ -84,93 +49,102 @@ export default {
     return {
       email: "",
       password: "",
-      validated: {},
-      captchaError: false,
-      isCaptchaChecked: false, // Biến để theo dõi trạng thái checkbox
     };
   },
-  watch: {
-    email(value) {
-      this.validateEmail(value);
-    },
-    password(value) {
-      this.validatePassword(value);
-    },
-  },
   computed: {
-    isValidated() {
-      return this.validated.email && this.validated.password;
+    isEmailValid() {
+      return /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(
+        this.email
+      );
+    },
+    isFormValid() {
+      return this.isEmailValid && this.password.length >= 6;
     },
   },
   methods: {
-    onCaptchaClick() {
-      if (typeof grecaptcha !== "undefined") {
-        grecaptcha.ready(() => {
-          grecaptcha
-            .execute("6LeM92gqAAAAAPjBmkM_YoXkkfv8p0jLZikZ1Odl", {
-              action: "login",
-            })
-            .then((token) => {
-              this.loginUser(token);
-            })
-            .catch(() => {
-              this.captchaError = true; // Hiển thị thông báo lỗi nếu CAPTCHA không thành công
-            });
-        });
-      } else {
-        this.captchaError = true; // Hiển thị thông báo lỗi nếu grecaptcha không được tải
-      }
-    },
-    async loginUser(recaptchaToken) {
-      if (!this.isValidated || !recaptchaToken) {
-        this.$toast.error(
-          "Vui lòng điền đầy đủ thông tin yêu cầu và xác minh CAPTCHA."
-        );
-        return;
-      }
-      try {
-        const user = {
-          email: this.email,
-          password: this.password,
-          recaptchaToken: recaptchaToken,
-        };
-        const authStore = useAuthStore();
+    async handleLogin() {
+      if (this.isFormValid) {
+        try {
+          const user = {
+            email: this.email,
+            password: this.password,
+          };
+          const authStore = useAuthStore();
+          const { response, role } = await authStore.login(user);
 
-        const { response, role } = await authStore.login(user);
-
-        // Kiểm tra trạng thái phản hồi
-        if (response.status === 200) {
-          this.$toast.success(response.data.message);
-
-          // Chuyển hướng dựa trên vai trò
-          if (role === "ROLE_ADMIN") {
-            setTimeout(() => {
-              this.$router.push("/admin").then(() => window.location.reload());
-            }, 2000);
+          // Kiểm tra trạng thái phản hồi
+          if (response.status === 200) {
+            this.$toast.success(response.data.message);
+            console.log(this.$authStore.userId);
           } else {
-            setTimeout(() => {
-              this.$router.push("/user").then(() => window.location.reload());
-            }, 2000);
+            this.$toast.warning(response.data.message);
           }
-        } else {
-          this.$toast.warning(response.data.message);
+        } catch (error) {
+          this.$toast.error(error.response?.data?.message || "Đã xảy ra lỗi");
         }
-      } catch (error) {
-        this.$toast.error(error.response?.data?.message || "Đã xảy ra lỗi");
       }
-    },
-    validateEmail(value) {
-      this.validated.email = /.+@.+\.(com|vn)$/.test(value);
-    },
-    validatePassword(value) {
-      this.validated.password = /^(?=.*[a-z])(?=.*\d).{8,}$/.test(value);
     },
   },
 };
 </script>
 
-<style>
-.form-img {
+<style scoped>
+.login-container {
+  display: flex;
   justify-content: center;
+  align-items: center;
+  height: 100vh; /* Chiều cao của trang đầy đủ */
+  background-color: #f4f7fc;
+}
+
+.login-box {
+  background-color: white;
+  padding: 40px;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  width: 100%;
+  max-width: 450px; /* Đặt giới hạn chiều rộng tối đa */
+  min-width: 350px; /* Đặt chiều rộng tối thiểu */
+  text-align: center;
+}
+
+h2 {
+  margin-bottom: 20px;
+  font-size: 28px; /* Tăng kích thước font của tiêu đề */
+}
+
+.form-group {
+  margin-bottom: 20px;
+  text-align: left;
+}
+
+input {
+  width: 100%;
+  padding: 14px;
+  margin-top: 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 16px;
+}
+
+button {
+  background-color: #4caf50;
+  color: white;
+  padding: 14px;
+  width: 100%;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 16px;
+}
+
+button:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+}
+
+.error-message {
+  color: red;
+  font-size: 14px;
 }
 </style>

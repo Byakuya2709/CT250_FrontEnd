@@ -41,8 +41,6 @@ if (token) {
     if (decodedToken.exp < currentTime) {
       console.log("Token has expired. Logging out...");
       localStorage.removeItem('token');
-      localStorage.removeItem('avatar');
-      localStorage.removeItem('_grecaptcha');
       removeAuthorization();
       router.push('/login'); // Redirect to login page
     } else {
@@ -51,7 +49,6 @@ if (token) {
   } catch (error) {
     console.error("Error decoding token:", error);
     localStorage.removeItem('token');
-    localStorage.removeItem('_grecaptcha');
     removeAuthorization();
   }
 } else {

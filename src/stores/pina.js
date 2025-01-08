@@ -12,13 +12,11 @@ export const useAuthStore = defineStore('auth', {
   state: () => ({
     user: {
       id: null,
-      name: '',
       email: ''
     },
     token: null,
     error: null,
     role: null,
-    avatar: null, // avatar khởi tạo là null
   }),
   actions: {
     async hydrate() {
@@ -31,10 +29,8 @@ export const useAuthStore = defineStore('auth', {
           role: decodedToken.role,
           user: {
             id: decodedToken.userId,
-            name: decodedToken.userName,
             email: decodedToken.sub
           },
-          avatar: localStorage.getItem('avatar')
         });
       }
     },
@@ -43,20 +39,15 @@ export const useAuthStore = defineStore('auth', {
         const response = await api.post('/auth/login', user);
         const res = response.data;
 
-        // // Ghi log dữ liệu trả về từ API
-        // console.log('Dữ liệu trả về từ API:', res);
 
         this.token = res.data.token;
         const decodedToken = jwtDecode(this.token);
         this.role = decodedToken.role;
-        const avatar = res.data.avatar ? `data:image/png;base64,${res.data.avatar}` : null;
-        localStorage.setItem('avatar', avatar);
 
         // Cập nhật state
         this.$patch({
           user: {
             id: res.data.userId,
-            name: res.data.userName,
             email: decodedToken.sub
           },
           role: decodedToken.role,
@@ -78,39 +69,25 @@ export const useAuthStore = defineStore('auth', {
       }
     },
     async logout() {
-      try {
-        const response = await api.post('/logout');
-        if (response.status === 200) {
-          toast.success(response.data.message);
-        }
+      // Cập nhật lại state khi đăng xuất
+      this.$patch({
+        token: null,
+        user: { id: null, name: '', email: '' },
+        role: null,
+      });
 
-        // Cập nhật lại state khi đăng xuất
-        this.$patch({
-          token: null,
-          user: { id: null, name: '', email: '' },
-          role: null,
-          avatar: null, // Reset avatar khi đăng xuất
-        });
-
-        localStorage.removeItem('token');
-        localStorage.removeItem('avatar');
-        localStorage.removeItem('_grecaptcha');
-        removeAuthorization();
-        toast.info("Đang chuyển sang trang đăng nhập")
-        setTimeout(() => {
-          router.replace('/login')
-        }, 2000);
-      } catch (err) {
-        toast.error(err.response.data.message);
-        this.error = "Đăng xuất không thành công. Vui lòng thử lại.";
-      }
+      localStorage.removeItem('token');
+      removeAuthorization();
+      toast.info("Đang chuyển sang trang đăng nhập")
+      setTimeout(() => {
+        router.replace('/login')
+      }, 2000);
     }
   },
   getters: {
     isAuthenticated: (state) => !!state.token,
     isAdmin: (state) => state.role && state.role.replace('ROLE_', '') === 'ADMIN',
     userId: (state) => state.user.id,
-    userName: (state) => state.user.name,
     email: (state) => state.user.email,
   },
 });
