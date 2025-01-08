@@ -1,69 +1,74 @@
 <template>
   <div class="register-container">
-    <h2>Đăng Ký</h2>
-    <form @submit.prevent="handleSubmit">
-      <div class="form-group">
-        <label for="email">Email</label>
-        <input
-          v-model="email"
-          type="email"
-          id="email"
-          placeholder="Nhập email"
-          required
-          class="input-field"
-        />
-        <span v-if="errors.email" class="error-message">{{
-          errors.email
-        }}</span>
-      </div>
+    <div class="register-box">
+      <h2>Đăng Ký</h2>
+      <form @submit.prevent="handleRegister">
+        <div class="form-group">
+          <label for="email">Email</label>
+          <input
+            type="email"
+            id="email"
+            v-model="email"
+            placeholder="Nhập email"
+            required
+            autofocus
+          />
+          <p v-if="email && !isEmailValid" class="error-message">
+            Email không hợp lệ.
+          </p>
+        </div>
 
-      <div class="form-group">
-        <label for="password">Mật khẩu</label>
-        <input
-          v-model="password"
-          type="password"
-          id="password"
-          placeholder="Nhập mật khẩu"
-          required
-          class="input-field"
-        />
-        <span v-if="errors.password" class="error-message">{{
-          errors.password
-        }}</span>
-      </div>
+        <div class="form-group">
+          <label for="password">Mật khẩu</label>
+          <input
+            type="password"
+            id="password"
+            v-model="password"
+            placeholder="Nhập mật khẩu"
+            required
+          />
+          <p v-if="password && password.length < 6" class="error-message">
+            Mật khẩu phải ít nhất 6 ký tự.
+          </p>
+        </div>
 
-      <div class="form-group">
-        <label for="confirmPassword">Nhập lại mật khẩu</label>
-        <input
-          v-model="confirmPassword"
-          type="password"
-          id="confirmPassword"
-          placeholder="Nhập lại mật khẩu"
-          required
-          class="input-field"
-        />
-        <span v-if="errors.confirmPassword" class="error-message">{{
-          errors.confirmPassword
-        }}</span>
-      </div>
+        <div class="form-group">
+          <label for="confirmPassword">Xác nhận mật khẩu</label>
+          <input
+            type="password"
+            id="confirmPassword"
+            v-model="confirmPassword"
+            placeholder="Nhập lại mật khẩu"
+            required
+          />
+          <p
+            v-if="confirmPassword && confirmPassword !== password"
+            class="error-message"
+          >
+            Mật khẩu xác nhận không khớp.
+          </p>
+        </div>
 
-      <button type="submit" class="submit-btn">Đăng ký</button>
-    </form>
+        <button type="submit" :disabled="!isFormValid">Đăng Ký</button>
+      </form>
 
-    <!-- Modal nhập OTP -->
-    <div v-if="isOtpModalVisible" class="modal-overlay">
-      <div class="modal-content">
-        <h3>Nhập mã OTP</h3>
-        <input
-          v-model="otp"
-          type="text"
-          placeholder="Nhập OTP"
-          class="otp-input"
-          maxlength="6"
-        />
-        <div class="modal-actions">
-          <button @click="verifyOtp" class="submit-btn">Xác nhận OTP</button>
-          <button @click="closeOtpModal" class="cancel-btn">Hủy</button>
+      <!-- Modal OTP -->
+      <div v-if="showOtpModal" class="otp-modal">
+        <div class="otp-box">
+          <h3>Nhập mã OTP</h3>
+          <form @submit.prevent="handleOtpVerification">
+            <div class="form-group">
+              <label for="otp">Mã OTP</label>
+              <input
+                type="text"
+                id="otp"
+                v-model="otp"
+                placeholder="Nhập mã OTP"
+                required
+              />
+            </div>
+            <button type="submit" :disabled="!otp">Xác nhận OTP</button>
+          </form>
         </div>
       </div>
     </div>
@@ -71,55 +76,90 @@
 </template>
 
 <script>
+import { api } from "../api/Api";
 export default {
+  name: "Register",
   data() {
     return {
       email: "",
       password: "",
       confirmPassword: "",
       otp: "",
-      errors: {
-        email: "",
-        password: "",
-        confirmPassword: "",
-      },
-      isOtpModalVisible: false,
+      role: "USER",
+      showOtpModal: false, // Hiển thị modal OTP
     };
   },
+  computed: {
+    isEmailValid() {
+      return /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(
+        this.email
+      );
+    },
+    isFormValid() {
+      return (
+        this.isEmailValid &&
+        this.password.length >= 6 &&
+        this.password === this.confirmPassword
+      );
+    },
+  },
+  created() {
+    // Dynamically set the role based on the current path
+    const path = this.$route.path;
+    if (path.includes("company")) {
+      this.role = "COMPANY";
+    } else if (path.includes("artist")) {
+      this.role = "ARTIST";
+    }
+    // If the path doesn't match any of the above, the role will stay 'USER'
+  },
   methods: {
-    handleSubmit() {
-      this.errors = {}; // Reset errors
-
-      // Validate fields
-      if (!this.email) {
-        this.errors.email = "Email không được để trống";
-      }
-      if (!this.password) {
-        this.errors.password = "Mật khẩu không được để trống";
-      }
-      if (this.password !== this.confirmPassword) {
-        this.errors.confirmPassword = "Mật khẩu không khớp";
-      }
-
-      if (Object.keys(this.errors).length === 0) {
-        // Mô phỏng việc gửi yêu cầu đăng ký
-        alert("Đăng ký thành công! Vui lòng nhập mã OTP.");
-
-        // Hiển thị modal nhập OTP
-        this.isOtpModalVisible = true;
+    async handleRegister() {
+      if (this.isFormValid) {
+        try {
+          const data = {
+            email: this.email,
+          };
+          const response = await api.post("/auth/generate", data);
+          if (response.status === 200) {
+            this.$toast.success(response.data.message);
+            this.showOtpModal = true; // Hiển thị modal OTP
+            // Gửi mã OTP qua email hoặc SMS ở đây
+          } else {
+            this.$toast.warning(response.data.message);
+            this.showOtpModal = true; // Hiển thị modal OTP
+          }
+        } catch (error) {
+          this.$toast.error(error.response?.data?.message || "Đã xảy ra lỗi");
+        }
       }
     },
-    verifyOtp() {
-      // Kiểm tra mã OTP
-      if (this.otp === "123456") {
-        alert("OTP xác nhận thành công!");
-        this.$router.push("/home"); // Chuyển sang route khác (ví dụ: /home)
-      } else {
-        alert("Mã OTP không chính xác. Vui lòng thử lại.");
+
+    async handleOtpVerification() {
+      if (this.otp) {
+        try {
+          const user = {
+            email: this.email,
+            password: this.password,
+            role: this.role,
+            code: this.otp,
+            type: "Registration",
+          };
+          const response = await api.post("/auth/register", user);
+          if (response.status === 201) {
+            this.$toast.success(response.data.message);
+            localStorage.setItem("email", this.email);
+            this.$router.push({
+              path: `/${this.role.toLocaleLowerCase()}/create`,
+              query: { accountId: response.data.data.id },
+            });
+          } else {
+            this.$toast.warning(response.data.message);
+          }
+        } catch (error) {
+          this.$toast.error(error.response?.data?.message || "Đã xảy ra lỗi");
+        }
       }
-    },
-    closeOtpModal() {
-      this.isOtpModalVisible = false;
     },
   },
 };
@@ -127,123 +167,88 @@ export default {
 
 <style scoped>
 .register-container {
-  width: 400px;
-  margin: 0 auto;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  background-color: #f4f7fc;
+}
+
+.register-box {
+  background-color: white;
   padding: 40px;
   border-radius: 8px;
-  background-color: #f9f9f9;
-  box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.1);
-  color: #333;
-  font-family: Arial, sans-serif;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  width: 100%;
+  max-width: 450px;
+  min-width: 350px;
+  text-align: center;
 }
 
 h2 {
-  text-align: center;
-  font-size: 22px;
-  font-weight: 600;
-  margin-bottom: 30px;
-  color: #333;
+  margin-bottom: 20px;
+  font-size: 28px;
 }
 
 .form-group {
   margin-bottom: 20px;
+  text-align: left;
 }
 
-label {
-  display: block;
-  font-size: 14px;
-  margin-bottom: 5px;
-  font-weight: 500;
-  color: #666;
-}
-
-.input-field {
+input {
   width: 100%;
-  padding: 12px;
-  border-radius: 6px;
+  padding: 14px;
+  margin-top: 8px;
   border: 1px solid #ccc;
-  font-size: 14px;
-  color: #333;
-  outline: none;
-  background-color: #fff;
-  transition: 0.3s ease;
-}
-
-.input-field:focus {
-  border-color: #666;
-}
-
-.submit-btn {
-  width: 100%;
-  padding: 12px;
-  background-color: #333;
-  color: white;
-  border: none;
-  border-radius: 6px;
+  border-radius: 4px;
   font-size: 16px;
-  cursor: pointer;
-  transition: 0.3s ease;
 }
 
-.submit-btn:hover {
-  background-color: #444;
+button {
+  background-color: #4caf50;
+  color: white;
+  padding: 14px;
+  width: 100%;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 16px;
+}
+
+button:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
 }
 
 .error-message {
-  color: #f44336;
-  font-size: 12px;
-  margin-top: 5px;
+  color: red;
+  font-size: 14px;
 }
 
-.modal-overlay {
+.otp-modal {
   position: fixed;
   top: 0;
   left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.4);
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
   display: flex;
   justify-content: center;
   align-items: center;
-  z-index: 1000;
 }
 
-.modal-content {
-  background: #fff;
-  padding: 20px;
-  border-radius: 6px;
-  width: 300px;
+.otp-box {
+  background-color: white;
+  padding: 40px;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   text-align: center;
-  box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.1);
+  width: 100%;
+  max-width: 400px;
 }
 
-.otp-input {
-  width: 80%;
-  padding: 10px;
-  margin-top: 10px;
-  border-radius: 6px;
-  border: 1px solid #ccc;
-  font-size: 14px;
-  outline: none;
-}
-
-.modal-actions {
-  display: flex;
-  justify-content: space-between;
-  margin-top: 20px;
-}
-
-.cancel-btn {
-  padding: 10px;
-  background-color: #f44336;
-  color: white;
-  border: none;
-  border-radius: 6px;
-  font-size: 14px;
-  cursor: pointer;
-}
-
-.cancel-btn:hover {
-  background-color: #e53935;
+h3 {
+  margin-bottom: 20px;
+  font-size: 24px;
 }
 </style>

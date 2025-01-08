@@ -12,7 +12,7 @@ const router = createRouter({
     },
     {
       path: '/signup',
-      alias: '',
+      alias: ['/company/signup', '/artist/signup'],
       name: 'register',
       component: () => import('../views/Register.vue')
     },
@@ -32,7 +32,12 @@ const router = createRouter({
       component: () => import('../views/ImageUpload.vue')
     },
     {
-      path: '/user',
+      path: '/user/create',
+      name: 'CreateUser',
+      component: () => import('../views/CreateUserProfile.vue')
+    },
+    {
+      path: '/users',
       name: 'User',
       component: () => import('../views/UserView.vue'),
     },
