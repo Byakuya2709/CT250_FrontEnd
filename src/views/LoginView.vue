@@ -70,14 +70,14 @@ export default {
             password: this.password,
           };
           const authStore = useAuthStore();
-          const { response, role } = await authStore.login(user);
+          const { loginResponse, role } = await authStore.login(user);
 
           // Kiểm tra trạng thái phản hồi
-          if (response.status === 200) {
-            this.$toast.success(response.data.message);
+          if (loginResponse.status === 200) {
+            this.$toast.success(loginResponse.data.message);
             console.log(this.$authStore.userId);
           } else {
-            this.$toast.warning(response.data.message);
+            this.$toast.warning(loginResponse.data.message);
           }
         } catch (error) {
           this.$toast.error(error.response?.data?.message || "Đã xảy ra lỗi");

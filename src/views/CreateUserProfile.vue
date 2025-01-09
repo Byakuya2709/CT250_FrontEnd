@@ -217,6 +217,7 @@ export default {
         this.$toast.success(response.data.message);
         // localStorage.removeItem("email");
       } catch (error) {
+        console.log(error);
         this.$toast.error("Đã xảy ra lỗi khi tạo người dùng");
       }
     },

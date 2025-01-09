@@ -77,6 +77,7 @@
 
 <script>
 import { api } from "../api/Api";
+import { useAuthStore } from "../stores/pina";
 export default {
   name: "Register",
   data() {
@@ -117,19 +118,17 @@ export default {
     async handleRegister() {
       if (this.isFormValid) {
         try {
-          const data = {
-            email: this.email,
-          };
+          const data = { email: this.email };
           const response = await api.post("/auth/generate", data);
           if (response.status === 200) {
             this.$toast.success(response.data.message);
             this.showOtpModal = true; // Hiển thị modal OTP
-            // Gửi mã OTP qua email hoặc SMS ở đây
           } else {
             this.$toast.warning(response.data.message);
-            this.showOtpModal = true; // Hiển thị modal OTP
+            this.showOtpModal = true;
           }
         } catch (error) {
+          console.log(error);
           this.$toast.error(error.response?.data?.message || "Đã xảy ra lỗi");
         }
       }
@@ -149,16 +148,37 @@ export default {
           if (response.status === 201) {
             this.$toast.success(response.data.message);
             localStorage.setItem("email", this.email);
-            this.$router.push({
-              path: `/${this.role.toLocaleLowerCase()}/create`,
-              query: { accountId: response.data.data.id },
-            });
+
+            const login = {
+              email: this.email,
+              password: this.password,
+            };
+
+            const authStore = useAuthStore();
+            const { loginResponse, role } = await authStore.login(login);
+            console.log(loginResponse);
+            console.log(role);
+
+            if (loginResponse.status === 200) {
+              this.$toast.success(loginResponse.data.message);
+              this.$router.push({
+                path: `/${this.role.toLocaleLowerCase()}/create`,
+                query: { accountId: response.data.data.id },
+              });
+            } else {
+              this.$toast.warning(loginResponse.data.message);
+            }
           } else {
             this.$toast.warning(response.data.message);
           }
         } catch (error) {
+          console.log(error);
           this.$toast.error(error.response?.data?.message || "Đã xảy ra lỗi");
+        } finally {
+          this.showOtpModal = false; // Đóng modal khi hoàn thành
         }
+      } else {
+        this.$toast.error("Vui lòng nhập mã OTP.");
       }
     },
   },

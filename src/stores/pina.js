@@ -54,12 +54,11 @@ export const useAuthStore = defineStore('auth', {
           token: this.token,
         });
 
-
+        const loginResponse = response;
         localStorage.setItem('token', this.token);
         setAuthorization(this.token);
-
         this.error = null; // Reset error
-        return { response, role: this.role };
+        return { loginResponse, role: this.role };
       } catch (err) {
         console.log(err);
         localStorage.removeItem('token'); // Xóa token khi lỗi
