@@ -185,7 +185,7 @@ export default {
         });
         this.$toast.success(response.data.message);
       } catch (error) {
-        this.$toast.error("Đã xảy ra lỗi khi lưu thông tin công ty.");
+        this.$toast.error(error.response?.data?.message || "Đã xảy ra lỗi");
       }
     },
   },

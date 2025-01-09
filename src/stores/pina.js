@@ -56,6 +56,7 @@ export const useAuthStore = defineStore('auth', {
 
         const loginResponse = response;
         localStorage.setItem('token', this.token);
+        localStorage.setItem('email', decodedToken.sub);
         setAuthorization(this.token);
         this.error = null; // Reset error
         return { loginResponse, role: this.role };
