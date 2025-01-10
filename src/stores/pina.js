@@ -77,6 +77,7 @@ export const useAuthStore = defineStore('auth', {
       });
 
       localStorage.removeItem('token');
+      localStorage.removeItem('email');
       removeAuthorization();
       toast.info("Đang chuyển sang trang đăng nhập")
       setTimeout(() => {

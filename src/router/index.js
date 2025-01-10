@@ -50,6 +50,14 @@ const router = createRouter({
       path: '/users',
       name: 'User',
       component: () => import('../views/UserView.vue'),
+      children: [
+        {
+          path: '/profile',
+          name: 'Profile',
+          component: () => import('../views/UserView/UserProfile.vue'),
+          alias: 'dashboard',
+        }
+      ],
     },
     {
       path: '/admin',

@@ -7,10 +7,17 @@
             class="user-info mt-4 d-flex align-items-center"
             style="flex-direction: column"
           >
-            <img v-if="avatar" :src="avatar" alt="User Avatar" class="avatar" />
+            <img
+              :src="
+                this.userInfo.imageURL ||
+                `https://res.cloudinary.com/dtza0pk4w/image/upload/v1734758873/default_avatar.jpg`
+              "
+              alt="User Avatar"
+              class="avatar"
+            />
             <div class="ms-3">
-              <p class="user-name">{{ user.name }}</p>
-              <p class="user-role" v-if="role">{{ role }}</p>
+              <p class="user-name">{{ userInfo.userName }}</p>
+              <p class="user-role" v-if="role">Vai trò: {{ role }}</p>
             </div>
           </div>
           <li class="nav-item mb-2" v-for="item in navItems" :key="item.name">
@@ -41,8 +48,15 @@
 </template>
 
 <script>
+import { api } from "../api/Api";
+
 export default {
   name: "User",
+  data() {
+    return {
+      userInfo: {},
+    };
+  },
   computed: {
     user() {
       return this.$authStore.user;
@@ -50,20 +64,17 @@ export default {
     role() {
       return this.$authStore.role;
     },
-    avatar() {
-      return this.$authStore.avatar;
-    },
     navItems() {
       return [
         {
-          name: "Trang Cá Nhân",
-          path: "/user/profile",
+          name: "Thông Tin Tài Khoản",
+          path: "/users/profile",
           iconPath:
             "M8 3.5a.5.5 0 0 1 .5.5v4h3.5a.5.5 0 0 1 0 1H8a.5.5 0 0 1-.5-.5V4a.5.5 0 0 1 .5-.5z M8 1a7 7 0 1 1 0 14A7 7 0 0 1 8 1zM1 8a7 7 0 1 0 14 0A7 7 0 0 0 1 8z",
         },
         {
-          name: "Quản Lý Tác Vụ",
-          path: "/user/tasks",
+          name: "Vé Đã Mua",
+          path: "/users/tickets",
           iconPath:
             "M2 3.5V2a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v1.5h1a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H1a1 1 0 0 1-1-1v-10a1 1 0 0 1 1-1h1zm11-1V2a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1v.5H2v10h12v-10h-1z M9 8H7v4h2V8zm1-3H6v2h4V5z",
         },
@@ -73,20 +84,25 @@ export default {
           iconPath:
             "M2 3.5V2a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v1.5h1a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H1a1 1 0 0 1-1-1v-10a1 1 0 0 1 1-1h1zm11-1V2a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1v.5H2v10h12v-10h-1z M9 8H7v4h2V8zm1-3H6v2h4V5z",
         },
-        {
-          name: "Tạo Tác Vụ",
-          path: "/user/newtask",
-          iconPath:
-            "M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3a.5.5 0 0 1 .5-.5z M8 15A7 7 0 1 0 8 1a7 7 0 0 0 0 14zM1 8a7 7 0 1 1 14 0A7 7 0 0 1 1 8z",
-        },
-        {
-          name: "Thay đổi thông tin cá nhân",
-          path: "/user/updateprofile",
-          iconPath:
-            "M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3a.5.5 0 0 1 .5-.5z M8 15A7 7 0 1 0 8 1a7 7 0 0 0 0 14zM1 8a7 7 0 1 1 14 0A7 7 0 0 1 1 8z",
-        },
       ];
     },
+  },
+  methods: {
+    async fetchUserInfo() {
+      try {
+        const res = await api.get(`/users/${this.user.id}`);
+        console.log(res.data);
+        this.userInfo = res.data.data;
+      } catch (error) {
+        this.$toast.error(
+          error.response?.data?.message ||
+            "Đã xảy ra lỗi khi tải thông tin người dùng"
+        );
+      }
+    },
+  },
+  created() {
+    this.fetchUserInfo();
   },
 };
 </script>

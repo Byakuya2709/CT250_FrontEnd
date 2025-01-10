@@ -49,6 +49,7 @@ if (token) {
   } catch (error) {
     console.error("Error decoding token:", error);
     localStorage.removeItem('token');
+    localStorage.removeItem('email');
     removeAuthorization();
   }
 } else {

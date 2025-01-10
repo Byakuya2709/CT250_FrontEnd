@@ -213,8 +213,6 @@ export default {
 
       try {
         const avatarResponse = await this.uploadAvatar();
-        console.log(avatarResponse);
-        console.log(avatarResponse.data.data);
         if (avatarResponse.data.data.imageUrl) {
           this.artist.imageURL = avatarResponse.data.data.imageUrl;
           await this.createArtist();
@@ -238,7 +236,6 @@ export default {
         const response = await api.post("/artists/create", this.artist, {
           params: { accountId, companyId: this.selectedCompanyId },
         });
-        console.log(response);
         this.$toast.success(response.data.message);
       } catch (error) {
         console.error(error);
