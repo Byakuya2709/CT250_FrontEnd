@@ -129,8 +129,8 @@ export default {
 }
 
 .avatar {
-  width: 50px; /* Kích thước lớn hơn */
-  height: 50px; /* Chiều cao tương ứng */
+  width: 70px; /* Kích thước lớn hơn */
+  height: 70px; /* Chiều cao tương ứng */
   border-radius: 50%; /* Hình tròn */
   border: 2px solid #007bff; /* Viền cho ảnh đại diện */
   box-shadow: 0 0 5px rgba(0, 123, 255, 0.5); /* Bóng đổ cho ảnh đại diện */

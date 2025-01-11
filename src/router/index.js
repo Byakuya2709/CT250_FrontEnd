@@ -24,7 +24,7 @@ const router = createRouter({
     {
       path: '/about',
       name: 'about',
-      component: () => import('../views/AboutView.vue')
+      component: () => import('../views/Date.vue')
     },
     {
       path: '/media',
@@ -56,8 +56,13 @@ const router = createRouter({
           name: 'Profile',
           component: () => import('../views/UserView/UserProfile.vue'),
           alias: 'dashboard',
-        }
+        },
       ],
+    },
+    {
+      path: '/events',
+      name: 'Events',
+      component: () => import('../views/EventCreateView.vue'),
     },
     {
       path: '/admin',
