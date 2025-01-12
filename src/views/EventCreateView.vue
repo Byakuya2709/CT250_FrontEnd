@@ -96,8 +96,8 @@
           />
           <!-- Chọn loại thời gian (day hoặc hours) -->
           <select v-model="eventDurationType" class="form-select">
-            <option value="hours">Hours</option>
-            <option value="day">Day</option>
+            <option value="hours">Giờ</option>
+            <option value="day">Ngày</option>
           </select>
         </div>
       </div>
@@ -161,23 +161,24 @@
           >
             <option value="" disabled>Chọn nghệ sĩ...</option>
             <option
-              v-for="(artist, id) in artistList"
-              :key="id"
-              :value="id"
-              :disabled="isArtistSelected(id)"
+              v-for="(artist, id) in artists"
+              :key="artist.id"
+              :value="artist.id"
+              :disabled="
+                event.eventListArtist.some((item) => item.id === artist.id)
+              "
             >
-              {{ artist }}
+              {{ artist.artistName }}
             </option>
           </select>
         </div>
 
-        <!-- Hiển thị danh sách nghệ sĩ đã chọn -->
         <div v-if="event.eventListArtist.length > 0" class="mt-3">
           <h5>Nghệ sĩ đã chọn:</h5>
           <div class="d-flex flex-wrap">
             <div
-              v-for="id in event.eventListArtist"
-              :key="id"
+              v-for="(item, index) in event.eventListArtist"
+              :key="index"
               class="d-flex align-items-center me-3 mb-2"
               style="
                 border: 1px solid #ccc;
@@ -186,11 +187,11 @@
                 background: #f8f9fa;
               "
             >
-              <span>{{ artistList[id] }}</span>
+              <span>{{ item.artistName }}</span>
               <button
                 type="button"
                 class="btn btn-sm btn-danger ms-2"
-                @click="removeArtist(id)"
+                @click="removeArtist(item.id)"
               >
                 X
               </button>
@@ -211,7 +212,7 @@
           required
         >
           <option v-for="(company, id) in companies" :key="id" :value="id">
-            {{ company }}
+            {{ company.companyName }}
           </option>
         </select>
       </div>
@@ -294,53 +295,37 @@ export default {
       event: {
         eventTitle: "",
         eventStartDate: "",
-        eventDescription: "",
-        eventAgeTag: "",
         eventEndDate: "",
-        eventTags: "",
-        eventDuration: "",
+        eventDescription: "",
+        eventAgeTag: null,
+        eventTags: [],
+        eventDuration: 0,
+        eventDurationType: "hours",
         eventAddress: "",
-        eventCapacity: "",
+        eventCapacity: 0,
         eventStatus: "",
-        eventCompanyId: "", // select tu companies value la companyName, key la id
-        eventListArtist: [], // select nhieu artist tu artistList value la artistName, key la id
-        eventPosterUrl: null, // Đường dẫn URL của poster
-        eventImages: [], // Mảng chứa các hình ảnh được chọn
+        eventListArtist: [],
+        eventCompanyId: "",
+        eventPosterUrl: "",
+        eventImages: [],
       },
-      companies: {
-        //du lieu cong ty
-      },
-
-      eventDurationInput: null, // Giá trị số lượng thời gian (vd: 2)
-      eventDurationType: "hours", // Loại thời gian (vd: hours hoặc day)
-      submitted: false, // Trạng thái đã gửi form
-      eventAgeTags, // Danh sách nhãn độ tuổi
-      eventTags, // Danh sách nhãn sự kiện
-      eventStatuses, // Danh sách trạng thái sự kiện
-      artistList: {
-        // Dữ liệu nghệ sĩ (giả sử đã fetch từ API)
-      },
+      eventAgeTags,
+      eventTags,
+      eventStatuses,
+      artists: [], // Dữ liệu nghệ sĩ
+      selectedArtist: null,
+      companies: [], // Dữ liệu công ty
+      eventDurationInput: 0,
+      eventDurationType: "hours", // Mặc định là giờ
+      submitted: false,
     };
-  },
-  watch: {
-    // Tự động cập nhật event.eventDuration khi eventDurationInput hoặc eventDurationType thay đổi
-    eventDurationInput() {
-      this.updateEventDuration();
-    },
-    eventDurationType() {
-      this.updateEventDuration();
-    },
-  },
-  created() {
-    this.fetchArtist();
-    this.fetchCompanies();
   },
   methods: {
     async fetchArtist() {
       try {
         const response = await api.get("/artists/get-all");
-        this.artistList = response.data.data;
-        console.log(this.artistList);
+        console.log(response.data.data);
+        this.artists = response.data.data;
       } catch (error) {
         this.$toast.error(error.response?.data?.message || "Đã xảy ra lỗi");
       }
@@ -349,15 +334,59 @@ export default {
       try {
         const response = await api.get("/companies/get-all");
         this.companies = response.data.data;
-        console.log(this.companies);
       } catch (error) {
         this.$toast.error(error.response?.data?.message || "Đã xảy ra lỗi");
       }
     },
-    handleSubmit() {
+    async handleSubmit() {
       this.submitted = true;
-      console.log("Sự kiện đã tạo:", this.event);
+      // Chuyển đổi thời gian sự kiện từ số lượng và đơn vị
+      this.event.eventDuration =
+        this.eventDurationInput * (this.eventDurationType === "hours" ? 1 : 24);
+
+      const newEvent = {
+        ...this.event, // Sao chép tất cả thuộc tính từ this.event
+        eventListArtist: this.event.eventListArtist.reduce((acc, item) => {
+          acc[item.id] = item.artistName;
+          return acc;
+        }, {}),
+      };
+
+      // In ra đối tượng event mới
+      console.log(newEvent);
+      const res = await api.post("/events/test", newEvent);
     },
+
+    addArtist() {
+      if (this.selectedArtist) {
+        // Tìm kiếm thông tin nghệ sĩ dựa trên selectedArtist (id)
+        const artist = this.artists.find((a) => a.id === this.selectedArtist);
+        if (
+          artist &&
+          !this.event.eventListArtist.some((item) => item.id === artist.id)
+        ) {
+          // Thêm cả id và artistName vào eventListArtist
+          this.event.eventListArtist.push({
+            id: artist.id,
+            artistName: artist.artistName,
+          });
+        }
+        this.selectedArtist = null; // Reset lại giá trị để không thể chọn lại nghệ sĩ vừa chọn
+      }
+    },
+    removeArtist(id) {
+      const index = this.event.eventListArtist.findIndex(
+        (item) => item.id === id
+      );
+      if (index !== -1) {
+        this.event.eventListArtist.splice(index, 1);
+      }
+    },
+    getArtistName(id) {
+      const artist = this.artists.find((a) => a.id === id);
+      return artist ? artist.artistName : "";
+    },
+
     handlePosterChange(event) {
       const file = event.target.files[0];
       if (file) {
@@ -368,89 +397,31 @@ export default {
         reader.readAsDataURL(file);
       }
     },
+
     handleImageChange(event) {
       const files = event.target.files;
-      this.event.eventImages = [];
-      for (let i = 0; i < files.length; i++) {
-        const file = files[i];
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          this.event.eventImages.push(e.target.result);
-        };
-        reader.readAsDataURL(file);
+      if (files) {
+        const images = Array.from(files).map((file) => {
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            this.event.eventImages.push(e.target.result);
+          };
+          reader.readAsDataURL(file);
+        });
       }
     },
   },
-  addArtist() {
-    if (this.selectedArtist && !this.isArtistSelected(this.selectedArtist)) {
-      this.event.eventListArtist.push(this.selectedArtist);
-    }
-    this.selectedArtist = ""; // Reset select
-  },
-  // Kiểm tra nghệ sĩ đã được chọn chưa
-  isArtistSelected(artistId) {
-    return this.event.eventListArtist.includes(artistId);
-  },
-  // Xoá nghệ sĩ khỏi danh sách
-  removeArtist(artistId) {
-    this.event.eventListArtist = this.event.eventListArtist.filter(
-      (id) => id !== artistId
-    );
-  },
-  updateEventDuration() {
-    if (this.eventDurationInput) {
-      this.event.eventDuration = `${this.eventDurationInput} - ${this.eventDurationType}`;
-    } else {
-      this.event.eventDuration = "";
-    }
+  mounted() {
+    this.fetchArtist();
+    this.fetchCompanies();
   },
 };
 </script>
 
 <style scoped>
-/* Tùy chỉnh CSS cho giao diện */
+/* Định dạng tùy chỉnh cho các phần tử */
 .container {
-  background-color: #f9f9f9;
-  border-radius: 10px;
-  padding: 20px;
-}
-
-h1 {
-  font-family: "Arial", sans-serif;
-  color: #333;
-}
-
-.form-label {
-  font-weight: bold;
-}
-
-.btn {
-  background-color: #007bff;
-  color: #fff;
-}
-
-.btn:hover {
-  background-color: #0056b3;
-}
-
-.img-thumbnail {
-  border-radius: 8px;
-  margin-right: 10px;
-}
-
-.img-fluid {
-  max-width: 100%;
-  height: auto;
-}
-
-.alert-success {
-  background-color: #28a745;
-  color: white;
-  padding: 20px;
-  border-radius: 8px;
-}
-
-textarea.form-control {
-  font-family: "Arial", sans-serif;
+  max-width: 800px;
+  margin: 0 auto;
 }
 </style>
