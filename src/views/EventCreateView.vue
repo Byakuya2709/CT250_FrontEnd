@@ -227,9 +227,9 @@
           accept="image/*"
           class="form-control"
         />
-        <div v-if="event.eventPosterUrl" class="mt-2">
+        <div v-if="eventPosterUrl" class="mt-2">
           <img
-            :src="event.eventPosterUrl"
+            :src="eventPosterUrl"
             alt="Poster"
             class="img-fluid"
             style="max-width: 200px; border-radius: 8px"
@@ -248,20 +248,24 @@
           accept="image/*"
           class="form-control"
         />
-        <div v-if="event.eventImages.length > 0" class="mt-2">
+        <div v-if="eventImages.length > 0" class="mt-2">
           <h5>Hình ảnh đã chọn:</h5>
           <div class="d-flex flex-wrap">
-            <div
-              v-for="(image, index) in event.eventImages"
-              :key="index"
-              class="m-2"
-            >
+            <div v-for="(image, index) in eventImages" :key="index" class="m-2">
               <img
                 :src="image"
                 alt="Image Preview"
                 class="img-thumbnail"
                 style="max-width: 100px; max-height: 100px; object-fit: cover"
               />
+              <!-- Nút bỏ chọn ảnh -->
+              <button
+                type="button"
+                class="btn btn-sm btn-warning mt-1"
+                @click="removeImage(index)"
+              >
+                Bỏ chọn
+              </button>
             </div>
           </div>
         </div>
@@ -306,11 +310,12 @@ export default {
         eventStatus: "",
         eventListArtist: [],
         eventCompanyId: "",
-        eventPosterUrl: "",
-        eventImages: [],
+        eventListImgURL: [],
       },
+      eventImages: [],
       eventAgeTags,
       eventTags,
+      eventPosterUrl: null,
       eventStatuses,
       artists: [], // Dữ liệu nghệ sĩ
       selectedArtist: null,
@@ -318,6 +323,7 @@ export default {
       eventDurationInput: 0,
       eventDurationType: "hours", // Mặc định là giờ
       submitted: false,
+      filesData: new FormData(),
     };
   },
   methods: {
@@ -339,8 +345,27 @@ export default {
       }
     },
     async handleSubmit() {
-      this.submitted = true;
-      // Chuyển đổi thời gian sự kiện từ số lượng và đơn vị
+     
+      try {
+        const posterResponse = await this.uploadPoster();
+        if (posterResponse.data.data.imageUrl) {
+          this.event.eventListImgURL.push(posterResponse.data.data.imageUrl);
+        }
+        const imageResponse = await this.uploadImages();
+        console.log("------");
+        console.log(imageResponse.data.data);
+
+        if (imageResponse.data.data) {
+          for (let i = 0; i < imageResponse.data.data.length; i++) {
+            this.event.eventListImgURL.push(imageResponse.data.data[i]);
+          }
+        }
+
+      } catch (error) {
+        console.log(error);
+        this.$toast.error(error.response?.data?.message || "Đã xảy ra lỗi");
+      }
+
       this.event.eventDuration =
         this.eventDurationInput * (this.eventDurationType === "hours" ? 1 : 24);
 
@@ -354,7 +379,22 @@ export default {
 
       // In ra đối tượng event mới
       console.log(newEvent);
+      this.event.eventListImgURL=[]
       const res = await api.post("/events/test", newEvent);
+    },
+    async uploadPoster() {
+      const formData = new FormData();
+      formData.append("file", this.eventPosterUrl);
+      return await api.post("/media/upload/events/poster", formData, {
+        params: { eventTitle: this.event.eventTitle },
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+    },
+    async uploadImages() {
+      return await api.post("/media/upload/events", this.filesData, {
+        params: { eventTitle: this.event.eventTitle },
+        headers: { "Content-Type": "multipart/form-data" },
+      });
     },
 
     addArtist() {
@@ -392,7 +432,7 @@ export default {
       if (file) {
         const reader = new FileReader();
         reader.onload = (e) => {
-          this.event.eventPosterUrl = e.target.result;
+          this.eventPosterUrl = file;
         };
         reader.readAsDataURL(file);
       }
@@ -401,16 +441,24 @@ export default {
     handleImageChange(event) {
       const files = event.target.files;
       if (files) {
-        const images = Array.from(files).map((file) => {
+        // Duyệt qua từng file và thêm vào FormData
+        Array.from(files).forEach((file) => {
+          this.filesData.append("files", file); // Thêm file gốc vào FormData
           const reader = new FileReader();
           reader.onload = (e) => {
-            this.event.eventImages.push(e.target.result);
+            this.eventImages.push(e.target.result); // Thêm base64 vào danh sách hiển thị nếu cần
           };
           reader.readAsDataURL(file);
         });
       }
     },
+    removeImage(index) {
+      this.eventImages.splice(index, 1);
+      this.filesData.splice(index, 1);
+      console.log(this.eventImages);
+    },
   },
+
   mounted() {
     this.fetchArtist();
     this.fetchCompanies();
