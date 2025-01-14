@@ -128,6 +128,18 @@
           required
         />
       </div>
+      <div class="mb-3">
+        <label for="eventCapacity" class="form-label">Giá vé</label>
+        <input
+          id="eventCapacity"
+          v-model.number="event.eventPrice"
+          type="number"
+          class="form-control"
+          min="0"
+          placeholder="Nhập số lượng người tối đa"
+          required
+        />
+      </div>
 
       <!-- Trạng thái sự kiện -->
       <div class="mb-3">
@@ -310,6 +322,7 @@ export default {
         eventStatus: "",
         eventListArtist: [],
         eventCompanyId: "",
+        eventPrice: 0,
         eventListImgURL: [],
       },
       eventImages: [],
@@ -345,7 +358,6 @@ export default {
       }
     },
     async handleSubmit() {
-     
       try {
         const posterResponse = await this.uploadPoster();
         if (posterResponse.data.data.imageUrl) {
@@ -360,7 +372,6 @@ export default {
             this.event.eventListImgURL.push(imageResponse.data.data[i]);
           }
         }
-
       } catch (error) {
         console.log(error);
         this.$toast.error(error.response?.data?.message || "Đã xảy ra lỗi");
@@ -379,7 +390,7 @@ export default {
 
       // In ra đối tượng event mới
       console.log(newEvent);
-      this.event.eventListImgURL=[]
+      this.event.eventListImgURL = [];
       const res = await api.post("/events/test", newEvent);
     },
     async uploadPoster() {
