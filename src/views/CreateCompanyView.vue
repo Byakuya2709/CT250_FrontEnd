@@ -80,7 +80,7 @@ export default {
     return {
       company: {
         companyName: "",
-        companyMail: localStorage.getItem("email") || "",
+        companyMail: sessionStorage.getItem("email") || "",
         companyPhone: "",
         companyAddress: "",
         logoURL: null,

@@ -147,7 +147,7 @@ export default {
           const response = await api.post("/auth/register", user);
           if (response.status === 201) {
             this.$toast.success(response.data.message);
-            localStorage.setItem("email", this.email);
+            sessionStorage.setItem("email", this.email);
 
             const login = {
               email: this.email,

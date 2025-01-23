@@ -140,7 +140,7 @@ export default {
     return {
       artist: {
         artistName: "",
-        contactMail: localStorage.getItem("email") || "lỗi",
+        contactMail: sessionStorage.getItem("email") || "lỗi",
         contactPhone: "",
         artistGender: "",
         artistBirth: "",

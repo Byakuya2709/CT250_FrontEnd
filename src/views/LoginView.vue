@@ -1,47 +1,55 @@
 <template>
-  <div class="login-container">
-    <div class="login-box">
-      <h2>Đăng Nhập</h2>
-      <form @submit.prevent="handleLogin">
-        <div class="form-group">
-          <label for="email">Email</label>
-          <input
-            type="email"
-            id="email"
-            v-model="email"
-            placeholder="Nhập email"
-            required
-            autofocus
-          />
-          <p v-if="email && !isEmailValid" class="error-message">
-            Email không hợp lệ.
-          </p>
-        </div>
+  <div class="login-container" style="flex-direction: column">
+    <div class="register-box">
+    <h2>Đăng Nhập</h2>
+    <form @submit.prevent="handleLogin">
+      <!-- Email -->
+      <div class="form-group">
+        <input
+          type="email"
+          v-model="email"
+          placeholder="Nhập email"
+          :disabled="isLocked"
+          @input="validateEmail"
+        />
+        <p v-if="errors.email" class="error-message">{{ errors.email }}</p>
+      </div>
 
-        <div class="form-group">
-          <label for="password">Mật khẩu</label>
-          <input
-            type="password"
-            id="password"
-            v-model="password"
-            placeholder="Nhập mật khẩu"
-            required
-          />
-          <p v-if="password && password.length < 6" class="error-message">
-            Mật khẩu phải ít nhất 6 ký tự.
-          </p>
-        </div>
+      <!-- Mật khẩu -->
+      <div class="form-group">
+        <input
+          type="password"
+          v-model="password"
+          placeholder="Nhập mật khẩu"
+          :disabled="isLocked"
+          @input="validatePassword"
+        />
+        <p v-if="errors.password" class="error-message">
+          {{ errors.password }}
+        </p>
+      </div>
 
-        <button type="submit" :disabled="!isFormValid">Đăng Nhập</button>
-      </form>
-    </div>
+      <!-- Thông báo khóa tài khoản -->
+      <p  class="error-message"v-if="isLocked">
+        Bạn đã đăng nhập sai 3 lần. Vui lòng thử lại sau {{ lockTime }} giây.
+      </p>
+      <p v-if="failedAttempts >= 5">
+        Tài khoản đã bị khóa.
+        <a href="/reset-password">Khôi phục mật khẩu</a>.
+      </p>
+
+      <!-- Nút đăng nhập -->
+      <button :disabled="isLocked || failedAttempts >= 5 || !isFormValid">
+        Đăng nhập
+      </button>
+    </form>
   </div>
+</div>
 </template>
 
 <script>
 import { useAuthStore } from "../stores/pina";
-import { computed, ref } from "vue";
-import { useRouter } from "vue-router";
+import { api } from "../api/Api";
 
 export default {
   name: "Login",
@@ -49,7 +57,29 @@ export default {
     return {
       email: "",
       password: "",
+      errors: {
+        email: "",
+        password: "",
+      },
+      failedAttempts: 0,
+      isLocked: false,
+      lockTime: 0,
     };
+  },
+  mounted() {
+    const savedFailedAttempts = sessionStorage.getItem("failedAttempts");
+    const savedIsLocked = sessionStorage.getItem("isLocked");
+    const savedLockTime = sessionStorage.getItem("lockTime");
+
+    if (savedFailedAttempts) {
+      this.failedAttempts = parseInt(savedFailedAttempts, 10);
+    }
+
+    if (savedIsLocked === "true") {
+      this.isLocked = true;
+      this.lockTime = parseInt(savedLockTime, 10) || 30;
+      this.startLockCountdown();
+    }
   },
   computed: {
     isEmailValid() {
@@ -62,26 +92,102 @@ export default {
     },
   },
   methods: {
-    async handleLogin() {
-      if (this.isFormValid) {
-        try {
-          const user = {
-            email: this.email,
-            password: this.password,
-          };
-          const authStore = useAuthStore();
-          const { loginResponse, role } = await authStore.login(user);
+    validateEmail() {
+      this.errors.email = "";
+      if (!this.isEmailValid) {
+        this.errors.email = "Email không hợp lệ.";
+      }
+    },
+    validatePassword() {
+      this.errors.password = "";
+      if (!this.password || this.password.length < 6) {
+        this.errors.password = "Mật khẩu phải ít nhất 6 ký tự.";
+      }
+    },
 
-          // Kiểm tra trạng thái phản hồi
+    async handleLogin() {
+      if (!this.isFormValid) {
+        this.$toast.error("Vui lòng kiểm tra lại thông tin.");
+        return;
+      }
+
+      if (this.failedAttempts < 5) {
+        try {
+          const user = { email: this.email, password: this.password };
+          const authStore = useAuthStore();
+          const { loginResponse } = await authStore.login(user);
+          console.log(loginResponse);
           if (loginResponse.status === 200) {
+            this.failedAttempts = 0;
+            sessionStorage.removeItem("failedAttempts");
             this.$toast.success(loginResponse.data.message);
-            console.log(this.$authStore.userId);
           } else {
-            this.$toast.warning(loginResponse.data.message);
+            this.handleFailedAttempt();
           }
         } catch (error) {
-          this.$toast.error(error.response?.data?.message || "Đã xảy ra lỗi");
+          console.log(error);
+          this.handleFailedAttempt();
         }
+      } else {
+        this.blockAccount();
+      }
+    },
+
+    handleFailedAttempt() {
+      this.failedAttempts++;
+      sessionStorage.setItem("failedAttempts", this.failedAttempts);
+
+      if (this.failedAttempts === 3) {
+        this.isLocked = true;
+        this.lockTime = 10;
+        sessionStorage.setItem("isLocked", true);
+        sessionStorage.setItem("lockTime", this.lockTime);
+        this.startLockCountdown();
+        this.$toast.warning("Đăng nhập sai 3 lần. Vui lòng thử lại sau.");
+      } else if (this.failedAttempts === 5) {
+        this.blockAccount();
+      } else {
+        this.$toast.warning("Đăng nhập thất bại. Thử lại.");
+      }
+    },
+
+    startLockCountdown() {
+      const interval = setInterval(() => {
+        this.lockTime--;
+
+        if (this.lockTime <= 0) {
+          clearInterval(interval);
+          this.isLocked = false;
+          sessionStorage.setItem("isLocked", false);
+        }
+      }, 1000);
+    },
+
+    async blockAccount() {
+      const user = { email: this.email };
+      try {
+        const response = await api.post("/auth/blocked", user);
+
+        if (response.status === 200) {
+          this.$toast.warning(
+            "Tài khoản đã bị khóa. Vui lòng kiểm tra email để khôi phục mật khẩu."
+          );
+
+          sessionStorage.removeItem("failedAttempts");
+          sessionStorage.removeItem("isLocked");
+          sessionStorage.removeItem("lockTime");
+
+          // Cập nhật lại trạng thái trong component
+          this.failedAttempts = 0;
+          this.isLocked = false;
+          this.lockTime = 0;
+        } else {
+          this.$toast.error("Có lỗi xảy ra khi khóa tài khoản.");
+        }
+      } catch (error) {
+        this.$toast.error(
+          error.response?.data?.message || "Không thể kết nối đến hệ thống."
+        );
       }
     },
   },
@@ -93,24 +199,13 @@ export default {
   display: flex;
   justify-content: center;
   align-items: center;
-  height: 100vh; /* Chiều cao của trang đầy đủ */
+  height: 100vh;
   background-color: #f4f7fc;
-}
-
-.login-box {
-  background-color: white;
-  padding: 40px;
-  border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  width: 100%;
-  max-width: 450px; /* Đặt giới hạn chiều rộng tối đa */
-  min-width: 350px; /* Đặt chiều rộng tối thiểu */
-  text-align: center;
 }
 
 h2 {
   margin-bottom: 20px;
-  font-size: 28px; /* Tăng kích thước font của tiêu đề */
+  font-size: 28px;
 }
 
 .form-group {
@@ -126,7 +221,6 @@ input {
   border-radius: 4px;
   font-size: 16px;
 }
-
 button {
   background-color: #4caf50;
   color: white;
@@ -146,5 +240,15 @@ button:disabled {
 .error-message {
   color: red;
   font-size: 14px;
+}
+.register-box {
+  background-color: white;
+  padding: 40px;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  width: 100%;
+  max-width: 450px;
+  min-width: 350px;
+  text-align: center;
 }
 </style>
