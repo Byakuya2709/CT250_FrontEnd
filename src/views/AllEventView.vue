@@ -38,7 +38,7 @@
           </div>
 
           <!-- Event Image -->
-          <img :src="event.eventListImgURL[0]" alt="Event Image" />
+          <img :src="getPosterImage(event.eventListImgURL)" alt="Event Image" />
         </div>
       </div>
 
@@ -81,6 +81,10 @@ export default {
     this.getEvents();
   },
   methods: {
+    getPosterImage(imgURLs) {
+      // Tìm ảnh có tên poster.jpg, nếu không tìm thấy, trả về phần tử đầu tiên trong mảng
+      return imgURLs.find((url) => url.includes("poster.jpg")) || imgURLs[0];
+    },
     // Fetch events data from the API
     async getEvents() {
       this.loading = true;

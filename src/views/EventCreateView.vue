@@ -11,8 +11,12 @@
           type="text"
           class="form-control"
           placeholder="Nhập tiêu đề sự kiện"
+          @input="validateTitle"
           required
         />
+        <p v-if="errors.eventTitle" class="error-message">
+          {{ errors.eventTitle }}
+        </p>
       </div>
 
       <!-- Ngày bắt đầu -->
@@ -23,8 +27,12 @@
           v-model="event.eventStartDate"
           type="datetime-local"
           class="form-control"
+          @input="validateStartDate"
           required
         />
+        <p v-if="errors.eventStartDate" class="error-message">
+          {{ errors.eventStartDate }}
+        </p>
       </div>
 
       <!-- Ngày kết thúc -->
@@ -35,8 +43,12 @@
           v-model="event.eventEndDate"
           type="datetime-local"
           class="form-control"
+          @input="validateEndDate"
           required
         />
+        <p v-if="errors.eventEndDate" class="error-message">
+          {{ errors.eventEndDate }}
+        </p>
       </div>
 
       <!-- Mô tả sự kiện -->
@@ -48,8 +60,12 @@
           class="form-control"
           placeholder="Nhập mô tả sự kiện"
           rows="3"
+          @input="validateDescription"
           required
         ></textarea>
+        <p v-if="errors.eventDescription" class="error-message">
+          {{ errors.eventDescription }}
+        </p>
       </div>
 
       <!-- Nhãn độ tuổi -->
@@ -97,7 +113,6 @@
           <!-- Chọn loại thời gian (day hoặc hours) -->
           <select v-model="eventDurationType" class="form-select">
             <option value="hours">Giờ</option>
-            <option value="day">Ngày</option>
           </select>
         </div>
       </div>
@@ -123,22 +138,32 @@
           v-model.number="event.eventCapacity"
           type="number"
           class="form-control"
-          min="1"
+          min="0"
+          @input="validateCapacity"
           placeholder="Nhập số lượng người tối đa"
           required
         />
+        <p v-if="errors.eventCapacity" class="error-message">
+          {{ errors.eventCapacity }}
+        </p>
       </div>
+
+      <!-- Giá vé -->
       <div class="mb-3">
-        <label for="eventCapacity" class="form-label">Giá vé</label>
+        <label for="eventPrice" class="form-label">Giá vé</label>
         <input
-          id="eventCapacity"
+          id="eventPrice"
           v-model.number="event.eventPrice"
           type="number"
           class="form-control"
           min="0"
-          placeholder="Nhập số lượng người tối đa"
+          @input="validatePrice"
+          placeholder="Nhập giá vé"
           required
         />
+        <p v-if="errors.eventPrice" class="error-message">
+          {{ errors.eventPrice }}
+        </p>
       </div>
 
       <!-- Trạng thái sự kiện -->
@@ -239,9 +264,9 @@
           accept="image/*"
           class="form-control"
         />
-        <div v-if="eventPosterUrl" class="mt-2">
+        <div v-if="eventPosterResult" class="mt-2">
           <img
-            :src="eventPosterUrl"
+            :src="eventPosterResult"
             alt="Poster"
             class="img-fluid"
             style="max-width: 200px; border-radius: 8px"
@@ -285,15 +310,11 @@
 
       <!-- Nút gửi -->
       <div class="text-center">
-        <button type="submit" class="btn btn-primary">Tạo sự kiện</button>
+        <button type="submit" class="btn btn-primary" :disabled="!isFormValid">
+          Tạo sự kiện
+        </button>
       </div>
     </form>
-
-    <!-- Hiển thị kết quả -->
-    <div v-if="submitted" class="mt-5 alert alert-success">
-      <h4 class="alert-heading">Sự kiện đã tạo thành công!</h4>
-      <pre>{{ JSON.stringify(event, null, 2) }}</pre>
-    </div>
   </div>
 </template>
 
@@ -325,10 +346,26 @@ export default {
         eventPrice: 0,
         eventListImgURL: [],
       },
+      errors: {
+        eventTitle: "Tiêu đề sự kiện không được để trống",
+        eventStartDate: "",
+        eventEndDate: "",
+        eventDescription: "",
+        eventAgeTag: "",
+        eventTags: "",
+        eventDuration: "",
+        eventAddress: "",
+        eventCapacity: "Sức chứa phải lớn hơn 0",
+        eventStatus: "",
+        eventCompanyId: "",
+        eventPrice: "Giá vé phải là số không âm",
+        eventListImgURL: "",
+      },
       eventImages: [],
       eventAgeTags,
       eventTags,
       eventPosterUrl: null,
+      eventPosterResult: null,
       eventStatuses,
       artists: [], // Dữ liệu nghệ sĩ
       selectedArtist: null,
@@ -338,6 +375,13 @@ export default {
       submitted: false,
       filesData: new FormData(),
     };
+  },
+
+  computed: {
+    isFormValid() {
+      // Kiểm tra tất cả các lỗi trong object errors, nếu có lỗi thì form không hợp lệ
+      return Object.values(this.errors).every((error) => error === "");
+    },
   },
   methods: {
     async fetchArtist() {
@@ -367,10 +411,22 @@ export default {
         console.log("------");
         console.log(imageResponse.data.data);
 
-        if (imageResponse.data.data) {
-          for (let i = 0; i < imageResponse.data.data.length; i++) {
-            this.event.eventListImgURL.push(imageResponse.data.data[i]);
+        //
+        const response = imageResponse.data.data;
+
+        if (Array.isArray(response)) {
+          // Nếu là mảng, thêm toàn bộ URL từ mảng
+          const uniqueUrls = response.filter(
+            (url) => !this.event.eventListImgURL.includes(url)
+          );
+          this.event.eventListImgURL.push(...uniqueUrls);
+        } else if (typeof response === "string") {
+          // Nếu là chuỗi, kiểm tra đã tồn tại trong mảng chưa, nếu chưa thì thêm
+          if (!this.event.eventListImgURL.includes(response)) {
+            this.event.eventListImgURL.push(response);
           }
+        } else {
+          console.error("Unexpected data format:", response);
         }
       } catch (error) {
         console.log(error);
@@ -391,7 +447,15 @@ export default {
       // In ra đối tượng event mới
       console.log(newEvent);
       this.event.eventListImgURL = [];
-      const res = await api.post("/events/test", newEvent);
+      try{
+        const response = await api.post("/events/create", newEvent);
+        console.log(response)
+        this.$toast.success(response.data.message);
+      }
+     catch(error){
+      this.$toast.error(error.response?.data?.message || "Đã xảy ra lỗi");
+     }
+      
     },
     async uploadPoster() {
       const formData = new FormData();
@@ -444,6 +508,7 @@ export default {
         const reader = new FileReader();
         reader.onload = (e) => {
           this.eventPosterUrl = file;
+          this.eventPosterResult = e.target.result;
         };
         reader.readAsDataURL(file);
       }
@@ -465,8 +530,71 @@ export default {
     },
     removeImage(index) {
       this.eventImages.splice(index, 1);
-      this.filesData.splice(index, 1);
+      const newFormData = new FormData();
+      this.eventImages.forEach((_, i) => {
+        const file = this.filesData.getAll("files")[i]; // Lấy file từ FormData gốc
+        newFormData.append("files", file); // Thêm lại các file còn lại vào FormData mới
+      });
+
+      this.filesData = newFormData;
       console.log(this.eventImages);
+    },
+    validateTitle() {
+      if (!this.event.eventTitle) {
+        this.errors.eventTitle = "Tiêu đề sự kiện không được để trống";
+      } else if (this.event.eventTitle.length < 5) {
+        this.errors.eventTitle = "Tiêu đề phải có ít nhất 5 ký tự";
+      } else {
+        this.errors.eventTitle = "";
+      }
+    },
+
+    validateStartDate() {
+      if (!this.event.eventStartDate) {
+        this.errors.eventStartDate = "Ngày bắt đầu không được để trống";
+      } else if (new Date(this.event.eventStartDate) < new Date()) {
+        this.errors.eventStartDate = "Ngày bắt đầu phải lớn hơn ngày hiện tại";
+      } else {
+        this.errors.eventStartDate = "";
+      }
+    },
+
+    validateEndDate() {
+      if (!this.event.eventEndDate) {
+        this.errors.eventEndDate = "Ngày kết thúc không được để trống";
+      } else if (
+        new Date(this.event.eventEndDate) <= new Date(this.event.eventStartDate)
+      ) {
+        this.errors.eventEndDate = "Ngày kết thúc phải sau ngày bắt đầu";
+      } else {
+        this.errors.eventEndDate = "";
+      }
+    },
+
+    validateDescription() {
+      if (!this.event.eventDescription) {
+        this.errors.eventDescription = "Mô tả sự kiện không được để trống";
+      } else if (this.event.eventDescription.length < 10) {
+        this.errors.eventDescription = "Mô tả sự kiện phải có ít nhất 10 ký tự";
+      } else {
+        this.errors.eventDescription = "";
+      }
+    },
+
+    validateCapacity() {
+      if (this.event.eventCapacity <= 0) {
+        this.errors.eventCapacity = "Sức chứa phải lớn hơn 0";
+      } else {
+        this.errors.eventCapacity = "";
+      }
+    },
+
+    validatePrice() {
+      if (this.event.eventPrice <= 0) {
+        this.errors.eventPrice = "Giá vé phải là số không âm";
+      } else {
+        this.errors.eventPrice = "";
+      }
     },
   },
 
@@ -482,5 +610,9 @@ export default {
 .container {
   max-width: 800px;
   margin: 0 auto;
+}
+.error-message {
+  color: red;
+  font-size: 14px;
 }
 </style>
