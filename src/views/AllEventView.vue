@@ -7,7 +7,12 @@
     <div v-if="events.length > 0">
       <!-- Container for event items -->
       <div class="event-list">
-        <div v-for="event in events" :key="event.eventId" class="event">
+        <div
+          v-for="event in events"
+          :key="event.eventId"
+          @click="goToEventDetails(event.eventId)"
+          class="event"
+        >
           <h3>{{ event.eventTitle }}</h3>
           <p>{{ event.eventDescription }}</p>
           <p>
@@ -148,6 +153,9 @@ export default {
         halfStars,
         emptyStars,
       };
+    },
+    goToEventDetails(eventId) {
+      this.$router.push({ name: "EventDetails", params: { eventId: eventId } });
     },
   },
 };

@@ -65,6 +65,11 @@ const router = createRouter({
       component: () => import('../views/EventCreateView.vue'),
     },
     {
+      path: '/events/:eventId',  // Đảm bảo tham số là 'eventId'
+    name: 'EventDetails',
+      component: () => import('../views/EventView/EventDetail.vue'),
+    },
+    {
       path: '/events/all',
       name: 'ListEvents',
       component: () => import('../views/AllEventView.vue'),
