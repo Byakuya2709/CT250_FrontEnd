@@ -66,6 +66,7 @@
         <p v-if="errors.eventDescription" class="error-message">
           {{ errors.eventDescription }}
         </p>
+        <p class="word-count">{{ wordCount }} / {{ maxWords }} từ</p>
       </div>
 
       <!-- Nhãn độ tuổi -->
@@ -361,6 +362,7 @@ export default {
         eventPrice: "Giá vé phải là số không âm",
         eventListImgURL: "",
       },
+      maxWords: 500, // Giới hạn số từ
       eventImages: [],
       eventAgeTags,
       eventTags,
@@ -381,6 +383,12 @@ export default {
     isFormValid() {
       // Kiểm tra tất cả các lỗi trong object errors, nếu có lỗi thì form không hợp lệ
       return Object.values(this.errors).every((error) => error === "");
+    },
+    wordCount() {
+      return this.event.eventDescription
+        .trim()
+        .split(/\s+/)
+        .filter((word) => word).length;
     },
   },
   methods: {
@@ -447,15 +455,13 @@ export default {
       // In ra đối tượng event mới
       console.log(newEvent);
       this.event.eventListImgURL = [];
-      try{
+      try {
         const response = await api.post("/events/create", newEvent);
-        console.log(response)
+        console.log(response);
         this.$toast.success(response.data.message);
+      } catch (error) {
+        this.$toast.error(error.response?.data?.message || "Đã xảy ra lỗi");
       }
-     catch(error){
-      this.$toast.error(error.response?.data?.message || "Đã xảy ra lỗi");
-     }
-      
     },
     async uploadPoster() {
       const formData = new FormData();
@@ -572,10 +578,16 @@ export default {
     },
 
     validateDescription() {
+      const words = this.event.eventDescription
+        .trim()
+        .split(/\s+/)
+        .filter((word) => word);
       if (!this.event.eventDescription) {
         this.errors.eventDescription = "Mô tả sự kiện không được để trống";
-      } else if (this.event.eventDescription.length < 10) {
-        this.errors.eventDescription = "Mô tả sự kiện phải có ít nhất 10 ký tự";
+      } else if (words.length > this.maxWords) {
+        this.errors.eventDescription = `Mô tả sự kiện không được vượt quá ${this.maxWords} từ.`;
+        // Cắt bớt nội dung khi vượt quá số từ cho phép
+        this.event.eventDescription = words.slice(0, this.maxWords).join(" ");
       } else {
         this.errors.eventDescription = "";
       }

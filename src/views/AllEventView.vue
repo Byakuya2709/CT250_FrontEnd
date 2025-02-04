@@ -14,7 +14,7 @@
           class="event"
         >
           <h3>{{ event.eventTitle }}</h3>
-          <p>{{ event.eventDescription }}</p>
+          <!-- <p>{{ event.eventDescription }}</p> -->
           <p>
             <strong>Start Date:</strong> {{ formatDate(event.eventStartDate) }}
           </p>
