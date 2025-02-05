@@ -2,7 +2,9 @@
   <div class="event-container" v-if="event">
     <div class="event-header">
       <h1 class="event-title">{{ event.eventTitle }}</h1>
-      <p class="event-tags">{{ event.eventTags }}</p>
+      <p v-for="(tag, index) in eventTags" :key="index" class="event-tags">
+        {{ tag }}
+      </p>
       <p class="event-age-tag">{{ event.eventAgeTag }}</p>
     </div>
 
@@ -109,6 +111,9 @@ export default {
       return this.event?.eventStartDate
         ? new Date(this.event.eventStartDate).toLocaleString()
         : "";
+    },
+    eventTags() {
+      return this.event.eventTags.split("_"); // Tách chuỗi tại dấu "_"
     },
     formattedEndDate() {
       return this.event?.eventEndDate

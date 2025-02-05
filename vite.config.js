@@ -13,6 +13,13 @@ export default defineConfig({
       '@': fileURLToPath(new URL('./src', import.meta.url))
     }
   },
+  css: {
+    postcss: {
+      plugins: [
+        // Các plugin PostCSS, nếu có
+      ]
+    }
+  },
   server: {
     port: 3001, // Chỉ định cổng mà máy chủ phát triển của bạn sẽ chạy
     proxy: {

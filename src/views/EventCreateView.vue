@@ -91,11 +91,17 @@
       <!-- Nhãn sự kiện -->
       <div class="mb-3">
         <label for="eventTags" class="form-label">Chọn nhãn sự kiện</label>
-        <select v-model="event.eventTags" id="eventTags" class="form-select">
-          <option v-for="tag in eventTags" :key="tag.value" :value="tag.value">
-            {{ tag.label }}
-          </option>
-        </select>
+        <multiselect
+          v-model="eventTagsList"
+          :options="eventTags"
+          :multiple="true"
+          :taggable="true"
+          :closeOnSelect="false"
+          placeholder="Chọn nhãn sự kiện"
+          label="label"
+          track-by="value"
+          @input="handleTagInput"
+        />
       </div>
 
       <div class="mb-3">
@@ -186,56 +192,30 @@
         </select>
       </div>
 
-      <!-- Chọn nghệ sĩ -->
+      <!-- Nghệ sĩ -->
       <div class="mb-3">
-        <label for="eventListArtist" class="form-label">Chọn nghệ sĩ</label>
-        <div class="d-flex align-items-center">
-          <!-- Dropdown để chọn nghệ sĩ -->
-          <select
-            id="eventListArtist"
-            class="form-select me-3"
-            v-model="selectedArtist"
-            @change="addArtist"
+        <label for="eventArtists" class="form-label">Nhập tên nghệ sĩ</label>
+        <div class="input-group">
+          <input
+            v-model="event.newArtistName"
+            type="text"
+            id="eventArtists"
+            class="form-control"
+            placeholder="Nhập tên nghệ sĩ"
+          />
+          <button type="button" class="btn btn-primary" @click="addArtist">
+            Thêm nghệ sĩ
+          </button>
+        </div>
+        <ul class="list-group mt-2">
+          <li
+            v-for="(artist, index) in event.eventListArtist"
+            :key="index"
+            class="list-group-item"
           >
-            <option value="" disabled>Chọn nghệ sĩ...</option>
-            <option
-              v-for="(artist, id) in artists"
-              :key="artist.id"
-              :value="artist.id"
-              :disabled="
-                event.eventListArtist.some((item) => item.id === artist.id)
-              "
-            >
-              {{ artist.artistName }}
-            </option>
-          </select>
-        </div>
-
-        <div v-if="event.eventListArtist.length > 0" class="mt-3">
-          <h5>Nghệ sĩ đã chọn:</h5>
-          <div class="d-flex flex-wrap">
-            <div
-              v-for="(item, index) in event.eventListArtist"
-              :key="index"
-              class="d-flex align-items-center me-3 mb-2"
-              style="
-                border: 1px solid #ccc;
-                border-radius: 5px;
-                padding: 5px;
-                background: #f8f9fa;
-              "
-            >
-              <span>{{ item.artistName }}</span>
-              <button
-                type="button"
-                class="btn btn-sm btn-danger ms-2"
-                @click="removeArtist(item.id)"
-              >
-                X
-              </button>
-            </div>
-          </div>
-        </div>
+            {{ artist }}
+          </li>
+        </ul>
       </div>
 
       <!-- Công ty tổ chức -->
@@ -325,8 +305,13 @@ import { eventAgeTags } from "../composable/eventAgeTag";
 import { eventTags } from "../composable/eventTags";
 import { eventStatuses } from "../composable/eventStatus";
 import { api } from "../api/Api";
+import Multiselect from "vue-multiselect";
+import "vue-multiselect/dist/vue-multiselect.css";
 
 export default {
+  components: {
+    Multiselect,
+  },
   name: "CreateEvent",
   data() {
     return {
@@ -347,6 +332,7 @@ export default {
         eventPrice: 0,
         eventListImgURL: [],
       },
+      eventTagsList: [],
       errors: {
         eventTitle: "Tiêu đề sự kiện không được để trống",
         eventStartDate: "",
@@ -390,23 +376,26 @@ export default {
         .split(/\s+/)
         .filter((word) => word).length;
     },
+    handleTagInput() {
+      // Trích xuất các giá trị 'value' từ mảng đối tượng và nối chúng lại thành chuỗi
+      this.event.eventTags = this.eventTagsList
+        .map((tag) => tag.value)
+        .join("_");
+    },
   },
   methods: {
-    async fetchArtist() {
-      try {
-        const response = await api.get("/artists/get-all");
-        console.log(response.data.data);
-        this.artists = response.data.data;
-      } catch (error) {
-        this.$toast.error(error.response?.data?.message || "Đã xảy ra lỗi");
-      }
-    },
     async fetchCompanies() {
       try {
         const response = await api.get("/companies/get-all");
         this.companies = response.data.data;
       } catch (error) {
         this.$toast.error(error.response?.data?.message || "Đã xảy ra lỗi");
+      }
+    },
+    addArtist() {
+      if (this.event.newArtistName.trim() !== "") {
+        this.event.eventListArtist.push(this.event.newArtistName.trim());
+        this.event.newArtistName = ""; // Reset input sau khi thêm
       }
     },
     async handleSubmit() {
@@ -446,10 +435,6 @@ export default {
 
       const newEvent = {
         ...this.event, // Sao chép tất cả thuộc tính từ this.event
-        eventListArtist: this.event.eventListArtist.reduce((acc, item) => {
-          acc[item.id] = item.artistName;
-          return acc;
-        }, {}),
       };
 
       // In ra đối tượng event mới
@@ -478,34 +463,8 @@ export default {
       });
     },
 
-    addArtist() {
-      if (this.selectedArtist) {
-        // Tìm kiếm thông tin nghệ sĩ dựa trên selectedArtist (id)
-        const artist = this.artists.find((a) => a.id === this.selectedArtist);
-        if (
-          artist &&
-          !this.event.eventListArtist.some((item) => item.id === artist.id)
-        ) {
-          // Thêm cả id và artistName vào eventListArtist
-          this.event.eventListArtist.push({
-            id: artist.id,
-            artistName: artist.artistName,
-          });
-        }
-        this.selectedArtist = null; // Reset lại giá trị để không thể chọn lại nghệ sĩ vừa chọn
-      }
-    },
-    removeArtist(id) {
-      const index = this.event.eventListArtist.findIndex(
-        (item) => item.id === id
-      );
-      if (index !== -1) {
-        this.event.eventListArtist.splice(index, 1);
-      }
-    },
-    getArtistName(id) {
-      const artist = this.artists.find((a) => a.id === id);
-      return artist ? artist.artistName : "";
+    handleInput() {
+      this.event.eventTagsString = this.event.eventTags.join("_");
     },
 
     handlePosterChange(event) {
@@ -611,7 +570,6 @@ export default {
   },
 
   mounted() {
-    this.fetchArtist();
     this.fetchCompanies();
   },
 };
