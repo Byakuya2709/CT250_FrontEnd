@@ -65,10 +65,19 @@ const router = createRouter({
       component: () => import('../views/EventCreateView.vue'),
     },
     {
-      path: '/events/:eventId',  // Đảm bảo tham số là 'eventId'
-    name: 'EventDetails',
+      path: '/events/:eventId',
+      name: 'EventDetails',
       component: () => import('../views/EventView/EventDetail.vue'),
+      children: [
+        {
+          path: 'booking',
+          name: 'EventBooking',
+          component: () => import('../views/EventView/EventBooking.vue'),
+          meta: { modal: true }, // Đánh dấu route này là modal
+        }
+      ]
     },
+
     {
       path: '/events/all',
       name: 'ListEvents',

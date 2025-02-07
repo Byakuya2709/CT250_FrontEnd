@@ -10,7 +10,7 @@
 
     <div class="event-content">
       <swiper
-        v-if="event?.eventListImgURL && event.eventListImgURL.length"
+        v-if="event?.eventListImgURL?.length"
         :space-between="10"
         :slides-per-view="1"
         :loop="true"
@@ -29,27 +29,15 @@
 
       <div class="event-details">
         <h3>Event Details</h3>
-        <!-- <p><strong>Description:</strong> {{ event.eventDescription }}</p> -->
         <p><strong>Start Date:</strong> {{ formattedStartDate }}</p>
         <p><strong>End Date:</strong> {{ formattedEndDate }}</p>
         <p><strong>Price:</strong> {{ event.eventPrice }} VND</p>
         <p><strong>Location:</strong> {{ event.eventAddress }}</p>
         <p><strong>Capacity:</strong> {{ event.eventCapacity }} people</p>
         <p><strong>Status:</strong> {{ event.eventStatus }}</p>
-        <!-- <div class="event-artists">
-          <h3>Performing Artists</h3>
-          <ul>
-            <li
-              v-for="(artist, key) in event.eventListArtist"
-              :key="key"
-              class="artist-item"
-            >
-              {{ artist }}
-            </li>
-          </ul>
-        </div> -->
       </div>
     </div>
+
     <div class="event-descriptions">
       <h3>Mô tả sự kiện</h3>
       <p><strong>Description:</strong> {{ event.eventDescription }}</p>
@@ -67,43 +55,108 @@
             <strong>Day {{ ticket.day }}</strong>
           </p>
           <p>Remaining Tickets: {{ ticket.remainingCapacity }}</p>
-          <button class="book-btn">Book Now</button>
+          <button class="book-btn" @click="openModal(ticket)">
+            Đặt vé ngay
+          </button>
         </div>
       </div>
     </div>
+
+    <!-- Modal đặt vé -->
+    <EventBooking
+      v-if="showModal"
+      :event="event"
+      :ticket="selectedTicket"
+      @close="closeModal"
+    />
   </div>
 
   <div v-else>
     <p>Loading event data...</p>
   </div>
 </template>
+
 <script>
 import { Swiper, SwiperSlide } from "swiper/vue";
 import "swiper/swiper-bundle.css";
 import { api } from "@/api/Api";
+import EventBooking from "@/views/EventView/EventBooking.vue";
 
 export default {
   components: {
     Swiper,
     SwiperSlide,
+    EventBooking,
   },
   data() {
     return {
+      loading: true,
       eventId: this.$route.params.eventId,
       event: null,
+      showModal: false,
+      selectedTicket: null,
     };
   },
-  mounted() {
-    this.fetchEventData();
+  async mounted() {
+    await this.fetchEventData();
+
+    if (this.$route.name === "EventBooking") {
+      const dayQuery = this.$route.query.day;
+      if (dayQuery) {
+        this.selectedTicket = this.event.ticketCapacities.find(
+          (ticket) => ticket.day == dayQuery
+        );
+      }
+      this.showModal = true;
+    }
+  },
+  watch: {
+    async $route(to) {
+      await this.fetchEventData();
+
+      if (to.name === "EventBooking") {
+        const dayQuery = to.query.day;
+        if (dayQuery) {
+          this.selectedTicket = this.event.ticketCapacities.find(
+            (ticket) => ticket.day == dayQuery
+          );
+        }
+        this.showModal = true;
+      } else {
+        this.showModal = false;
+        this.selectedTicket = null;
+      }
+    },
   },
   methods: {
     async fetchEventData() {
+      this.loading = true;
       try {
         const response = await api.get(`/events/${this.eventId}`);
         this.event = response.data.data;
       } catch (error) {
         console.error("Error fetching event data:", error);
+      } finally {
+        this.loading = false;
       }
+    },
+    openModal(ticket) {
+      this.selectedTicket = ticket;
+      this.showModal = true;
+
+      // Điều hướng sang /events/:eventId/booking + ticketId
+      this.$router.push({
+        name: "EventBooking",
+        params: { eventId: this.eventId },
+        query: { day: ticket.day },
+      });
+    },
+    closeModal() {
+      this.showModal = false;
+      this.selectedTicket = null;
+
+      // Quay lại trang event chính
+      this.$router.back();
     },
   },
   computed: {
@@ -112,13 +165,13 @@ export default {
         ? new Date(this.event.eventStartDate).toLocaleString()
         : "";
     },
-    eventTags() {
-      return this.event.eventTags.split("_"); // Tách chuỗi tại dấu "_"
-    },
     formattedEndDate() {
       return this.event?.eventEndDate
         ? new Date(this.event.eventEndDate).toLocaleString()
         : "";
+    },
+    eventTags() {
+      return this.event?.eventTags?.split("_") || [];
     },
   },
 };
