@@ -46,6 +46,7 @@ const router = createRouter({
       name: 'CreateArtist',
       component: () => import('../views/CreateArtistView.vue')
     },
+   
     {
       path: '/users',
       name: 'User',
@@ -63,6 +64,11 @@ const router = createRouter({
       path: '/events',
       name: 'Events',
       component: () => import('../views/EventCreateView.vue'),
+    },
+    {
+      path: '/events/:eventId/zone',
+      name: 'CreateZone',
+      component: () => import('../views/ZoneCreate.vue')
     },
     {
       path: '/events/:eventId',

@@ -61,7 +61,8 @@ app.use(Toast, {
   timeout: 4000,
   closeOnClick: true,
 });
-
+import VueKonva from 'vue-konva';
+app.use(VueKonva)
 
 app.use(ToastPlugin);
 app.use(createPinia());

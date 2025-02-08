@@ -20,6 +20,7 @@ export default defineConfig({
       ]
     }
   },
+  
   server: {
     port: 3001, // Chỉ định cổng mà máy chủ phát triển của bạn sẽ chạy
     proxy: {

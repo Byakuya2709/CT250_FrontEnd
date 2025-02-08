@@ -211,9 +211,12 @@
           <li
             v-for="(artist, index) in event.eventListArtist"
             :key="index"
-            class="list-group-item"
+            class="list-group-item d-flex justify-content-between align-items-center"
           >
             {{ artist }}
+            <button class="btn btn-sm btn-danger" @click="removeArtist(index)">
+              Xóa
+            </button>
           </li>
         </ul>
       </div>
@@ -397,6 +400,9 @@ export default {
         this.event.eventListArtist.push(this.event.newArtistName.trim());
         this.event.newArtistName = ""; // Reset input sau khi thêm
       }
+    },
+    removeArtist(index) {
+      this.event.eventListArtist.splice(index, 1);
     },
     async handleSubmit() {
       try {
