@@ -81,6 +81,16 @@
             Đặt vé ngay
           </button>
         </div>
+        <div class="ticket-card">
+          <p>
+            <strong>ALL_DAY</strong>
+          </p>
+          <p>Tổng: {{ this.event.totalDay }} ngày </p>
+          <!-- <p>Remaining Tickets: {{ totalRemainCapacity }}</p> -->
+          <button class="book-btn" @click="openModalAllDay">
+            Đặt vé toàn sự kiện
+          </button>
+        </div>
       </div>
     </div>
 
@@ -92,10 +102,12 @@
       @close="closeModal"
     />
   </div>
-
-  <div v-else>
-    <p>Loading event data...</p>
-  </div>
+  <EventBookingAllDay
+    v-if="showModalAllDay"
+    :event="event"
+    :day="this.string"
+    @close="closeModal"
+  />
 </template>
 
 <script>
@@ -103,12 +115,14 @@ import { Swiper, SwiperSlide } from "swiper/vue";
 import "swiper/swiper-bundle.css";
 import { api } from "@/api/Api";
 import EventBooking from "@/views/EventView/EventBooking.vue";
+import EventBookingAllDay from "@/views/EventView/EventBookingAllDay.vue";
 
 export default {
   components: {
     Swiper,
     SwiperSlide,
     EventBooking,
+    EventBookingAllDay,
   },
   data() {
     return {
@@ -116,6 +130,8 @@ export default {
       eventId: this.$route.params.eventId,
       event: null,
       showModal: false,
+      showModalAllDay: false,
+      string: "ALL_DAYS",
       selectedTicket: null,
     };
   },
@@ -175,13 +191,26 @@ export default {
         query: { day: ticket.day },
       });
     },
+    openModalAllDay() {
+      this.selectedTicket = {
+        day: "ALL_DAY",
+        remainingCapacity: this.totalRemainCapacity || 0,
+      };
+      this.showModalAllDay = true;
+
+      this.$router.push({
+        name: "EventBookingAllDay",
+        params: { eventId: this.eventId },
+        query: { day: "ALL_DAYS" },
+      });
+    },
     closeModal() {
       this.showModal = false;
+      this.showModalAllDay = false;
       this.selectedTicket = null;
 
       // Quay lại trang event chính
-      this.$router.push({ name: "EventDetails", });
-
+      this.$router.push({ name: "EventDetails" });
     },
     calculateAverageRating(event) {
       let totalReviews = 0;
@@ -225,6 +254,14 @@ export default {
     },
     eventTags() {
       return this.event?.eventTags?.split("_") || [];
+    },
+    totalRemainCapacity() {
+      if (!this.event?.eventTicketCapacity) return 0;
+      return Math.min(
+        ...Object.values(this.event.eventTicketCapacity).map(
+          (capacity) => capacity || Infinity
+        )
+      );
     },
   },
 };

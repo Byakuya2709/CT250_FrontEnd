@@ -76,6 +76,12 @@ const router = createRouter({
           name: 'EventBooking',
           component: () => import('../views/EventView/EventBooking.vue'),
           meta: { modal: true }, // Đánh dấu route này là modal
+        },
+        {
+          path: 'booking/all-day',
+          name: 'EventBookingAllDay',
+          component: () => import('../views/EventView/EventBookingAllDay.vue'),
+          meta: { modal: true }, 
         }
       ]
     },
