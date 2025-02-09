@@ -21,11 +21,7 @@ const router = createRouter({
       name: "login",
       component: () => import('../views/LoginView.vue')
     },
-    {
-      path: '/about',
-      name: 'about',
-      component: () => import('../views/Date.vue')
-    },
+
     {
       path: '/media',
       name: 'media',

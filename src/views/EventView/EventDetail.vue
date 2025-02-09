@@ -5,6 +5,25 @@
       <p v-for="(tag, index) in eventTags" :key="index" class="event-tags">
         {{ tag }}
       </p>
+
+      <div class="stars">
+        <span
+          v-for="index in getStars(event).fullStars"
+          :key="'full-' + index"
+          class="star full-star"
+        >
+          ★
+        </span>
+        <span v-if="getStars(event).halfStars" class="star half-star">★</span>
+        <span
+          v-for="index in getStars(event).emptyStars"
+          :key="'empty-' + index"
+          class="star empty-star"
+        >
+          ★
+        </span>
+      </div>
+
       <p class="event-age-tag">{{ event.eventAgeTag }}</p>
     </div>
 
@@ -47,15 +66,18 @@
       <h3>Book Your Tickets</h3>
       <div class="ticket-list">
         <div
-          v-for="ticket in event.ticketCapacities"
-          :key="ticket.capacityId"
+          v-for="(remainingCapacity, day) in event.eventTicketCapacity"
+          :key="day"
           class="ticket-card"
         >
           <p>
-            <strong>Day {{ ticket.day }}</strong>
+            <strong>Day {{ day }}</strong>
           </p>
-          <p>Remaining Tickets: {{ ticket.remainingCapacity }}</p>
-          <button class="book-btn" @click="openModal(ticket)">
+          <p>Remaining Tickets: {{ remainingCapacity }}</p>
+          <button
+            class="book-btn"
+            @click="openModal({ day, remainingCapacity })"
+          >
             Đặt vé ngay
           </button>
         </div>
@@ -66,7 +88,7 @@
     <EventBooking
       v-if="showModal"
       :event="event"
-      :ticket="selectedTicket"
+      :day="selectedTicket"
       @close="closeModal"
     />
   </div>
@@ -103,9 +125,10 @@ export default {
     if (this.$route.name === "EventBooking") {
       const dayQuery = this.$route.query.day;
       if (dayQuery) {
-        this.selectedTicket = this.event.ticketCapacities.find(
-          (ticket) => ticket.day == dayQuery
-        );
+        this.selectedTicket = {
+          day: dayQuery,
+          remainingCapacity: this.event.eventTicketCapacity[dayQuery] || 0,
+        };
       }
       this.showModal = true;
     }
@@ -117,9 +140,10 @@ export default {
       if (to.name === "EventBooking") {
         const dayQuery = to.query.day;
         if (dayQuery) {
-          this.selectedTicket = this.event.ticketCapacities.find(
-            (ticket) => ticket.day == dayQuery
-          );
+          this.selectedTicket = {
+            day: dayQuery,
+            remainingCapacity: this.event.eventTicketCapacity[dayQuery] || 0,
+          };
         }
         this.showModal = true;
       } else {
@@ -156,7 +180,36 @@ export default {
       this.selectedTicket = null;
 
       // Quay lại trang event chính
-      this.$router.back();
+      this.$router.push({ name: "EventDetails", });
+
+    },
+    calculateAverageRating(event) {
+      let totalReviews = 0;
+      let weightedSum = 0;
+
+      // Loop through ratings to calculate the weighted sum
+      for (let star in event.eventRatingStart) {
+        let count = event.eventRatingStart[star];
+        weightedSum += star * count;
+        totalReviews += count;
+      }
+
+      // Return the average rating or 0 if no ratings
+      return totalReviews === 0 ? 0 : weightedSum / totalReviews;
+    },
+
+    // Get full, half, and empty stars based on the average rating of an event
+    getStars(event) {
+      const averageRating = this.calculateAverageRating(event);
+      const fullStars = Math.floor(averageRating); // Full stars
+      const halfStars = averageRating % 1 >= 0.5 ? 1 : 0; // Half star if needed
+      const emptyStars = 5 - fullStars - halfStars; // Empty stars
+
+      return {
+        fullStars,
+        halfStars,
+        emptyStars,
+      };
     },
   },
   computed: {
@@ -318,5 +371,29 @@ export default {
 .swiper-button-prev:hover,
 .swiper-button-next:hover {
   background: rgba(0, 0, 0, 0.9);
+}
+.stars {
+  margin-top: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.star {
+  font-size: 20px;
+  color: #ffcc00;
+  margin-right: 3px;
+}
+
+.full-star {
+  color: #ffcc00;
+}
+
+.half-star {
+  position: relative;
+}
+
+.empty-star {
+  color: #e0e0e0;
 }
 </style>
